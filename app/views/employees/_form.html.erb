@@ -1,0 +1,77 @@
+<%= form_with(model: employee) do |form| %>
+  <% if employee.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(employee.errors.count, "error") %> prohibited this employee from being saved:</h2>
+
+      <ul>
+        <% employee.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :name, style: "display: block" %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :person_id, style: "display: block" %>
+    <%= form.text_field :person_id %>
+  </div>
+
+  <div>
+    <%= form.label :company, style: "display: block" %>
+    <%= form.text_field :company %>
+  </div>
+
+  <div>
+    <%= form.label :status_of_employment, style: "display: block" %>
+    <%= form.text_field :status_of_employment %>
+  </div>
+
+  <div>
+    <%= form.label :schedule, style: "display: block" %>
+    <%= form.text_field :schedule %>
+  </div>
+
+  <div>
+    <%= form.label :basic_rate, style: "display: block" %>
+    <%= form.text_field :basic_rate %>
+  </div>
+
+  <div>
+    <%= form.label :allowance_per_day, style: "display: block" %>
+    <%= form.text_field :allowance_per_day %>
+  </div>
+
+  <div>
+    <%= form.label :landbank_atm, style: "display: block" %>
+    <%= form.checkbox :landbank_atm %>
+  </div>
+
+  <div>
+    <%= form.label :shift_start, style: "display: block" %>
+    <%= form.time_field :shift_start %>
+  </div>
+
+  <div>
+    <%= form.label :shift_end, style: "display: block" %>
+    <%= form.time_field :shift_end %>
+  </div>
+
+  <div>
+    <%= form.label :break_start, style: "display: block" %>
+    <%= form.time_field :break_start %>
+  </div>
+
+  <div>
+    <%= form.label :break_end, style: "display: block" %>
+    <%= form.time_field :break_end %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>
