@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  employee: one
+  date: 2025-12-20
+  clock_in: 2025-12-20 15:53:14
+  clock_out: 2025-12-20 15:53:14
+  night_diff_minutes: 1
+  overtime_minutes: 1
+  abnormal_situation: MyString
+
+two:
+  employee: two
+  date: 2025-12-20
+  clock_in: 2025-12-20 15:53:14
+  clock_out: 2025-12-20 15:53:14
+  night_diff_minutes: 1
+  overtime_minutes: 1
+  abnormal_situation: MyString

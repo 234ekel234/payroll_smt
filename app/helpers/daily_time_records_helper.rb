@@ -1,0 +1,2 @@
+module DailyTimeRecordsHelper
+end

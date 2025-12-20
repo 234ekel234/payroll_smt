@@ -1,0 +1,16 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Daily time records" %>
+
+<h1>Daily time records</h1>
+
+<div id="daily_time_records">
+  <% @daily_time_records.each do |daily_time_record| %>
+    <%= render daily_time_record %>
+    <p>
+      <%= link_to "Show this daily time record", daily_time_record %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New daily time record", new_daily_time_record_path %>

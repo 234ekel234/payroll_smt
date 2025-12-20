@@ -10,9 +10,22 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_20_073517) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_20_075314) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "daily_time_records", force: :cascade do |t|
+    t.string "abnormal_situation"
+    t.datetime "clock_in"
+    t.datetime "clock_out"
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.bigint "employee_id", null: false
+    t.integer "night_diff_minutes"
+    t.integer "overtime_minutes"
+    t.datetime "updated_at", null: false
+    t.index ["employee_id"], name: "index_daily_time_records_on_employee_id"
+  end
 
   create_table "employees", force: :cascade do |t|
     t.decimal "allowance_per_day"
@@ -33,4 +46,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_20_073517) do
     t.text "work_days", default: ["Mon", "Tue", "Wed", "Thu", "Fri"], array: true
     t.index ["person_id"], name: "index_employees_on_person_id", unique: true
   end
+
+  add_foreign_key "daily_time_records", "employees"
 end
