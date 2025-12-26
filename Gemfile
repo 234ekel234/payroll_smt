@@ -23,7 +23,7 @@ gem 'roo'
 # gem 'faraday', '~> 2.7'
 gem 'google-apis-drive_v3', '~> 0.75.0'
 gem 'googleauth'
-gem 'google-apis-sheets_v4', '~> 0.6.0'
+gem 'google-apis-sheets_v4', '~> 0.46.0'
 
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
