@@ -1,16 +1,52 @@
-<p style="color: green"><%= notice %></p>
+<h1 class="mb-4">Daily Time Records</h1>
 
-<% content_for :title, "Daily time records" %>
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <%= link_to "Add New DTR", new_daily_time_record_path, class: "btn btn-primary" %>
 
-<h1>Daily time records</h1>
+  <!-- File Import Form -->
+  <%= form_with url: import_file_daily_time_records_path, local: true, method: :post, html: { multipart: true, class: "d-flex gap-2" } do |f| %>
+    <%= f.file_field :file, class: "form-control" %>
+    <%= f.submit "Import File", class: "btn btn-success" %>
+  <% end %>
 
-<div id="daily_time_records">
-  <% @daily_time_records.each do |daily_time_record| %>
-    <%= render daily_time_record %>
-    <p>
-      <%= link_to "Show this daily time record", daily_time_record %>
-    </p>
+  <!-- Google Sheet Import Form -->
+  <%= form_with url: import_google_daily_time_records_path, local: true, method: :post, class: "d-flex gap-2" do |f| %>
+    <%= f.text_field :spreadsheet_id, placeholder: "Google Sheet ID", class: "form-control" %>
+    <%= f.submit "Import Google Sheet", class: "btn btn-info" %>
   <% end %>
 </div>
 
-<%= link_to "New daily time record", new_daily_time_record_path %>
+<table class="table table-striped table-bordered table-hover table-sm">
+  <thead class="table-dark">
+    <tr>
+      <th>#</th>
+      <th>Employee</th>
+      <th>Date</th>
+      <th>Clock In</th>
+      <th>Clock Out</th>
+      <th>Night Diff (min)</th>
+      <th>Overtime (min)</th>
+      <th>Abnormal Situation</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @daily_time_records.each_with_index do |dtr, idx| %>
+      <tr>
+        <td><%= idx + 1 %></td>
+        <td><%= dtr.employee.name %></td>
+        <td><%= dtr.date %></td>
+        <td><%= dtr.clock_in.strftime("%I:%M %p") if dtr.clock_in %></td>
+        <td><%= dtr.clock_out.strftime("%I:%M %p") if dtr.clock_out %></td>
+        <td><%= dtr.night_diff_minutes || 0 %></td>
+        <td><%= dtr.overtime_minutes || 0 %></td>
+        <td><%= dtr.abnormal_situation %></td>
+        <td>
+          <%= link_to "Show", daily_time_record_path(dtr), class: "btn btn-sm btn-secondary" %>
+          <%= link_to "Edit", edit_daily_time_record_path(dtr), class: "btn btn-sm btn-warning" %>
+          <%= link_to "Delete", daily_time_record_path(dtr), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-sm btn-danger" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

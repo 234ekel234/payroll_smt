@@ -79,5 +79,5 @@ class DailyTimeRecord < ApplicationRecord
   def total_break_minutes
     return 0 unless break_start && break_end
     ((break_end - break_start) / 60).to_i
-  end
+  end 
 end

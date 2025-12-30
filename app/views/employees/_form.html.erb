@@ -1,77 +1,120 @@
-<%= form_with(model: employee) do |form| %>
-  <% if employee.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(employee.errors.count, "error") %> prohibited this employee from being saved:</h2>
+<%= form_with(model: employee) do |f| %>
 
-      <ul>
-        <% employee.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <!-- BASIC INFORMATION -->
+  <h6 class="mb-3">Basic Information</h6>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :name, class: "form-label" %>
+      <%= f.text_field :name, class: "form-control", required: true %>
     </div>
-  <% end %>
 
-  <div>
-    <%= form.label :name, style: "display: block" %>
-    <%= form.text_field :name %>
+    <div class="col-md-6">
+      <%= f.label :person_id, "Employee ID", class: "form-label" %>
+      <%= f.text_field :person_id, class: "form-control", required: true %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :person_id, style: "display: block" %>
-    <%= form.text_field :person_id %>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :company, class: "form-label" %>
+      <%= f.text_field :company, class: "form-control" %>
+    </div>
+
+    <div class="col-md-6">
+      <%= f.label :status_of_employment, class: "form-label" %>
+      <%= f.select :status_of_employment,
+            ["Regular", "Probationary", "Contractual"],
+            { include_blank: "Select status" },
+            class: "form-select" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :company, style: "display: block" %>
-    <%= form.text_field :company %>
+  <!-- PAY INFORMATION -->
+  <h6 class="mt-4 mb-3">Pay Information</h6>
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :basic_rate, "Basic Rate (per day)", class: "form-label" %>
+      <%= f.number_field :basic_rate, step: 0.01, class: "form-control" %>
+    </div>
+
+    <div class="col-md-6">
+      <%= f.label :allowance_per_day, "Allowance (per day)", class: "form-label" %>
+      <%= f.number_field :allowance_per_day, step: 0.01, class: "form-control" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :status_of_employment, style: "display: block" %>
-    <%= form.text_field :status_of_employment %>
+  <!-- SCHEDULE -->
+  <h6 class="mt-4 mb-3">Schedule</h6>
+
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <%= f.label :shift_start, class: "form-label" %>
+      <%= f.time_field :shift_start, class: "form-control" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :shift_end, class: "form-label" %>
+      <%= f.time_field :shift_end, class: "form-control" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :schedule, "Schedule Name", class: "form-label" %>
+      <%= f.text_field :schedule, class: "form-control", placeholder: "e.g. Day Shift" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :schedule, style: "display: block" %>
-    <%= form.text_field :schedule %>
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <%= f.label :break_start, class: "form-label" %>
+      <%= f.time_field :break_start, class: "form-control" %>
+    </div>
+
+    <div class="col-md-6">
+      <%= f.label :break_end, class: "form-label" %>
+      <%= f.time_field :break_end, class: "form-control" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :basic_rate, style: "display: block" %>
-    <%= form.text_field :basic_rate %>
+  <!-- WORK DAYS (CHECKBOXES) -->
+  <h6 class="mt-4 mb-2">Work Days</h6>
+
+  <div class="mb-3">
+    <div class="row">
+      <% Date::DAYNAMES.each do |day| %>
+        <div class="col-md-3 col-sm-4 col-6">
+          <div class="form-check">
+            <%= check_box_tag "employee[work_days][]",
+                  day,
+                  employee.work_days.include?(day),
+                  id: "employee_work_days_#{day}",
+                  class: "form-check-input" %>
+
+            <%= label_tag "employee_work_days_#{day}",
+                  day,
+                  class: "form-check-label" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="form-text mt-2">
+      Select the days the employee is expected to work.
+      Rest days will be calculated automatically.
+    </div>
   </div>
 
-  <div>
-    <%= form.label :allowance_per_day, style: "display: block" %>
-    <%= form.text_field :allowance_per_day %>
+  <!-- BANK -->
+  <div class="form-check mb-4">
+    <%= f.check_box :landbank_atm, class: "form-check-input" %>
+    <%= f.label :landbank_atm, "Has Landbank ATM", class: "form-check-label" %>
   </div>
 
-  <div>
-    <%= form.label :landbank_atm, style: "display: block" %>
-    <%= form.checkbox :landbank_atm %>
+  <!-- ACTION BUTTONS -->
+  <div class="d-flex justify-content-end gap-2">
+    <%= link_to "Cancel", employees_path, class: "btn btn-secondary" %>
+    <%= f.submit class: "btn btn-primary" %>
   </div>
 
-  <div>
-    <%= form.label :shift_start, style: "display: block" %>
-    <%= form.time_field :shift_start %>
-  </div>
-
-  <div>
-    <%= form.label :shift_end, style: "display: block" %>
-    <%= form.time_field :shift_end %>
-  </div>
-
-  <div>
-    <%= form.label :break_start, style: "display: block" %>
-    <%= form.time_field :break_start %>
-  </div>
-
-  <div>
-    <%= form.label :break_end, style: "display: block" %>
-    <%= form.time_field :break_end %>
-  </div>
-
-  <div>
-    <%= form.submit %>
-  </div>
 <% end %>

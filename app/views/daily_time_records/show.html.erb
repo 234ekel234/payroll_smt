@@ -1,10 +1,16 @@
-<p style="color: green"><%= notice %></p>
+<h1>Daily Time Record</h1>
 
-<%= render @daily_time_record %>
+<p>
+  <strong>Employee:</strong> <%= @daily_time_record.employee.name %> (<%= @daily_time_record.employee.person_id %>)<br>
+  <strong>Date:</strong> <%= @daily_time_record.date %><br>
+  <strong>Clock In:</strong> <%= @daily_time_record.clock_in.strftime("%I:%M %p") if @daily_time_record.clock_in %><br>
+  <strong>Clock Out:</strong> <%= @daily_time_record.clock_out.strftime("%I:%M %p") if @daily_time_record.clock_out %><br>
+  <strong>Night Diff (min):</strong> <%= @daily_time_record.night_diff_minutes || 0 %><br>
+  <strong>Overtime (min):</strong> <%= @daily_time_record.overtime_minutes || 0 %><br>
+  <strong>Abnormal Situation:</strong> <%= @daily_time_record.abnormal_situation %>
+</p>
 
-<div>
-  <%= link_to "Edit this daily time record", edit_daily_time_record_path(@daily_time_record) %> |
-  <%= link_to "Back to daily time records", daily_time_records_path %>
-
-  <%= button_to "Destroy this daily time record", @daily_time_record, method: :delete %>
+<div class="d-flex gap-2">
+  <%= link_to "Edit", edit_daily_time_record_path(@daily_time_record), class: "btn btn-warning" %>
+  <%= link_to "Back", daily_time_records_path, class: "btn btn-secondary" %>
 </div>

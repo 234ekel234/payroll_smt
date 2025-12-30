@@ -1,52 +1,32 @@
-<%= form_with(model: daily_time_record) do |form| %>
-  <% if daily_time_record.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(daily_time_record.errors.count, "error") %> prohibited this daily_time_record from being saved:</h2>
+<%= form_with(model: daily_time_record, local: true) do |f| %>
+  <div class="mb-3">
+    <%= f.label :employee_id, "Employee" %>
+    <%= f.collection_select :employee_id, Employee.all, :id, :name, { prompt: "Select Employee" }, class: "form-select" %>
+  </div>
 
-      <ul>
-        <% daily_time_record.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+  <div class="mb-3">
+    <%= f.label :date %>
+    <%= f.date_field :date, class: "form-control" %>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col">
+      <%= f.label :clock_in %>
+      <%= f.datetime_local_field :clock_in, class: "form-control" %>
     </div>
-  <% end %>
-
-  <div>
-    <%= form.label :employee_id, style: "display: block" %>
-    <%= form.text_field :employee_id %>
+    <div class="col">
+      <%= f.label :clock_out %>
+      <%= f.datetime_local_field :clock_out, class: "form-control" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :date, style: "display: block" %>
-    <%= form.date_field :date %>
+  <div class="mb-3">
+    <%= f.label :abnormal_situation %>
+    <%= f.text_field :abnormal_situation, class: "form-control" %>
   </div>
 
-  <div>
-    <%= form.label :clock_in, style: "display: block" %>
-    <%= form.datetime_field :clock_in %>
-  </div>
-
-  <div>
-    <%= form.label :clock_out, style: "display: block" %>
-    <%= form.datetime_field :clock_out %>
-  </div>
-
-  <div>
-    <%= form.label :night_diff_minutes, style: "display: block" %>
-    <%= form.number_field :night_diff_minutes %>
-  </div>
-
-  <div>
-    <%= form.label :overtime_minutes, style: "display: block" %>
-    <%= form.number_field :overtime_minutes %>
-  </div>
-
-  <div>
-    <%= form.label :abnormal_situation, style: "display: block" %>
-    <%= form.text_field :abnormal_situation %>
-  </div>
-
-  <div>
-    <%= form.submit %>
+  <div class="d-flex gap-2">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Back", daily_time_records_path, class: "btn btn-secondary" %>
   </div>
 <% end %>

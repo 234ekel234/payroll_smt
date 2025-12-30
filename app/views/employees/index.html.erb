@@ -1,16 +1,87 @@
-<p style="color: green"><%= notice %></p>
+<div class="card shadow-sm">
 
-<% content_for :title, "Employees" %>
+  <!-- HEADER -->
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">Employees</h5>
 
-<h1>Employees</h1>
+    <%= link_to "Add Employee",
+          new_employee_path,
+          class: "btn btn-primary btn-sm" %>
+  </div>
 
-<div id="employees">
-  <% @employees.each do |employee| %>
-    <%= render employee %>
-    <p>
-      <%= link_to "Show this employee", employee %>
-    </p>
-  <% end %>
+  <!-- TABLE -->
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th>Employee ID</th>
+          <th>Name</th>
+          <th>Company</th>
+          <th>Employment Status</th>
+          <th>Schedule</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <% @employees.each do |employee| %>
+          <tr>
+            <td>
+              <%= employee.person_id %>
+            </td>
+
+            <td>
+              <strong><%= employee.name %></strong><br>
+              <small class="text-muted">
+                Work days: <%= employee.formatted_work_days %>
+              </small>
+            </td>
+
+            <td>
+              <%= employee.company.presence || "-" %>
+            </td>
+
+            <td>
+              <span class="badge bg-secondary">
+                <%= employee.status_of_employment.presence || "N/A" %>
+              </span>
+            </td>
+
+            <td>
+              <% if employee.shift_start && employee.shift_end %>
+                <%= employee.shift_start.strftime("%I:%M %p") %> –
+                <%= employee.shift_end.strftime("%I:%M %p") %>
+              <% else %>
+                <span class="text-muted">Not set</span>
+              <% end %>
+            </td>
+
+            <td class="text-end">
+              <%= link_to "View",
+                    employee,
+                    class: "btn btn-outline-secondary btn-sm" %>
+
+              <%= link_to "Edit",
+                    edit_employee_path(employee),
+                    class: "btn btn-outline-primary btn-sm" %>
+
+              <%= link_to "Delete",
+                    employee,
+                    method: :delete,
+                    data: { confirm: "Are you sure you want to delete this employee?" },
+                    class: "btn btn-outline-danger btn-sm" %>
+            </td>
+          </tr>
+        <% end %>
+
+        <% if @employees.empty? %>
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              No employees found.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>
-
-<%= link_to "New employee", new_employee_path %>

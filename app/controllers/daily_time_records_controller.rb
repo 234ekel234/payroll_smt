@@ -1,12 +1,13 @@
+# app/controllers/daily_time_records_controller.rb
 class DailyTimeRecordsController < ApplicationController
-  before_action :set_daily_time_record, only: %i[ show edit update destroy ]
+  before_action :set_daily_time_record, only: %i[show edit update destroy]
 
-  # GET /daily_time_records or /daily_time_records.json
+  # GET /daily_time_records
   def index
-    @daily_time_records = DailyTimeRecord.all
+    @daily_time_records = DailyTimeRecord.includes(:employee).order(date: :desc)
   end
 
-  # GET /daily_time_records/1 or /daily_time_records/1.json
+  # GET /daily_time_records/:id
   def show
   end
 
@@ -15,56 +16,62 @@ class DailyTimeRecordsController < ApplicationController
     @daily_time_record = DailyTimeRecord.new
   end
 
-  # GET /daily_time_records/1/edit
+  # GET /daily_time_records/:id/edit
   def edit
   end
 
-  # POST /daily_time_records or /daily_time_records.json
+  # POST /daily_time_records
   def create
     @daily_time_record = DailyTimeRecord.new(daily_time_record_params)
-
-    respond_to do |format|
-      if @daily_time_record.save
-        format.html { redirect_to @daily_time_record, notice: "Daily time record was successfully created." }
-        format.json { render :show, status: :created, location: @daily_time_record }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @daily_time_record.errors, status: :unprocessable_entity }
-      end
+    if @daily_time_record.save
+      redirect_to @daily_time_record, notice: "Daily Time Record was successfully created."
+    else
+      render :new, status: :unprocessable_entity
     end
   end
 
-  # PATCH/PUT /daily_time_records/1 or /daily_time_records/1.json
+  # PATCH/PUT /daily_time_records/:id
   def update
-    respond_to do |format|
-      if @daily_time_record.update(daily_time_record_params)
-        format.html { redirect_to @daily_time_record, notice: "Daily time record was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @daily_time_record }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @daily_time_record.errors, status: :unprocessable_entity }
-      end
+    if @daily_time_record.update(daily_time_record_params)
+      redirect_to @daily_time_record, notice: "Daily Time Record was successfully updated."
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
-  # DELETE /daily_time_records/1 or /daily_time_records/1.json
+  # DELETE /daily_time_records/:id
   def destroy
-    @daily_time_record.destroy!
+    @daily_time_record.destroy
+    redirect_to daily_time_records_path, notice: "Daily Time Record was successfully destroyed."
+  end
 
-    respond_to do |format|
-      format.html { redirect_to daily_time_records_path, notice: "Daily time record was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
+  # POST /daily_time_records/import_file
+  def import_file
+    if params[:file].present?
+      DailyTimeRecordImporter.new(file: params[:file]).import
+      redirect_to daily_time_records_path, notice: "DTRs imported successfully from file!"
+    else
+      redirect_to daily_time_records_path, alert: "Please attach a file to import."
+    end
+  end
+
+  # POST /daily_time_records/import_google
+  def import_google
+    if params[:spreadsheet_id].present?
+      DailyTimeRecordImporter.new(google_sheet_id: params[:spreadsheet_id]).import
+      redirect_to daily_time_records_path, notice: "DTRs imported successfully from Google Sheets!"
+    else
+      redirect_to daily_time_records_path, alert: "Please provide a Google Sheet ID."
     end
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_daily_time_record
-      @daily_time_record = DailyTimeRecord.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def daily_time_record_params
-      params.expect(daily_time_record: [ :employee_id, :date, :clock_in, :clock_out, :night_diff_minutes, :overtime_minutes, :abnormal_situation ])
-    end
+  def set_daily_time_record
+    @daily_time_record = DailyTimeRecord.find(params[:id])
+  end
+
+  def daily_time_record_params
+    params.require(:daily_time_record).permit(:employee_id, :date, :clock_in, :clock_out, :abnormal_situation)
+  end
 end
