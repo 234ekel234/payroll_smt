@@ -22,17 +22,15 @@ class DailyTimeRecord < ApplicationRecord
   def total_work_minutes
     return 0 unless valid_times? && employee&.shift_start_time && employee&.shift_end_time
 
-    shift_start = shift_start_for_date&.to_time
-    shift_end   = shift_end_for_date&.to_time
-    return 0 unless shift_start && shift_end
+    shift_start = shift_start_for_date.to_time
+    shift_end   = shift_end_for_date.to_time
 
     # Clip clock_in/out to shift boundaries
     effective_start = [clock_in, shift_start].max
     effective_end   = [normalized_clock_out, shift_end].min
     return 0 unless effective_end > effective_start
 
-    minutes = ((effective_end - effective_start).to_f / 60).to_i
-    minutes - total_break_minutes
+    ((effective_end - effective_start).to_f / 60).to_i - total_break_minutes
   end
 
   # Total break minutes from employee
@@ -59,74 +57,90 @@ class DailyTimeRecord < ApplicationRecord
     self.early_leave_minutes = calculate_early_leave_minutes
     self.overtime_minutes    = calculate_overtime_minutes
     self.night_diff_minutes  = calculate_night_diff_minutes
+    self.holiday_minutes     = calculate_holiday_minutes
     flag_abnormal_situations
   end
 
-  # Late minutes: count full minutes after shift start including grace
+  # ========================
+  # Minute Calculations
+  # ========================
+
   def calculate_late_minutes
     return 0 unless valid_times? && employee&.shift_start_time
-
     shift_start = shift_start_for_date.to_time
     grace_end   = shift_start + 5.minutes
-
     return 0 if clock_in <= grace_end
-
     ((clock_in - shift_start).to_f / 60).to_i
   end
 
-  # Early leave minutes: minutes before shift end
   def calculate_early_leave_minutes
     return 0 unless valid_times? && employee&.shift_end_time
-
     co = normalized_clock_out
     return 0 unless co.is_a?(Time)
-
     shift_end = shift_end_for_date.to_time
-    diff_minutes = ((shift_end - co).to_f / 60)
-    diff_minutes.positive? ? diff_minutes.to_i : 0
+    diff = ((shift_end - co).to_f / 60)
+    diff.positive? ? diff.to_i : 0
   end
 
-  # Overtime minutes: minutes after shift end including grace
   def calculate_overtime_minutes
     return 0 unless valid_times? && employee&.shift_end_time
-
     shift_end = shift_end_for_date.to_time
     grace_end = shift_end + 30.minutes
-
     return 0 if normalized_clock_out <= grace_end
-
     ((normalized_clock_out - shift_end).to_f / 60).to_i
   end
 
-  # Night differential: 22:00–06:00
   def calculate_night_diff_minutes
     return 0 unless valid_times?
-
     night_start = clock_in.change(hour: 22, min: 0)
     night_end   = (clock_in + 1.day).change(hour: 6, min: 0)
-
     overlap_start = [clock_in, night_start].max
     overlap_end   = [normalized_clock_out, night_end].min
     return 0 unless overlap_end > overlap_start
-
     ((overlap_end - overlap_start).to_f / 60).to_i
   end
 
+  # Holiday minutes: compute only minutes worked on holidays
+  def calculate_holiday_minutes
+    return 0 unless valid_times? && employee
+
+    # Find holidays that apply to this employee and date
+    holidays = Holiday.where(date: date)
+    return 0 if holidays.empty?
+
+    total_minutes = 0
+
+    holidays.each do |h|
+      # Whole day holiday
+      holiday_start = date.beginning_of_day
+      holiday_end   = date.end_of_day
+
+      overlap_start = [clock_in, holiday_start].max
+      overlap_end   = [normalized_clock_out, holiday_end].min
+      next unless overlap_end > overlap_start
+
+      total_minutes += ((overlap_end - overlap_start).to_f / 60).to_i
+    end
+
+    total_minutes
+  end
+
+
+
+
+
   # ========================
-  # Abnormal Situation
+  # Abnormal Situations
   # ========================
   def flag_abnormal_situations
     issues = []
 
-    # Absent during shift
-    if total_work_minutes == 0 && valid_times? && (clock_in > shift_end_for_date || normalized_clock_out < shift_start_for_date)
-      issues << "Absent during shift"
-    end
-
+    issues << "Absent during shift" if total_work_minutes == 0 && valid_times? && (clock_in > shift_end_for_date || normalized_clock_out < shift_start_for_date)
     issues << "Late" if late_minutes.to_i > 0
     issues << "Early leave" if early_leave_minutes.to_i > 0
     issues << "Overtime" if overtime_minutes.to_i > 0
     issues << "Night shift only" if total_work_minutes == 0 && night_diff_minutes.to_i > 0
+    issues << "Holiday Work" if holiday_minutes.to_i > 0
 
     self.abnormal_situation = issues.any? ? issues.join(", ") : nil
   end
@@ -136,24 +150,20 @@ class DailyTimeRecord < ApplicationRecord
   # ========================
   private
 
-  # Check if clock_in and clock_out are valid
   def valid_times?
     clock_in.is_a?(Time) && clock_out.is_a?(Time)
   end
 
-  # Adjust overnight shifts
   def adjust_night_shift
     return unless valid_times?
     self.clock_out += 1.day if clock_out <= clock_in
   end
 
-  # Normalized clock out for overnight shifts
   def normalized_clock_out
     return nil unless valid_times?
     clock_out <= clock_in ? clock_out + 1.day : clock_out
   end
 
-  # Shift start DateTime for the record's date
   def shift_start_for_date
     return nil unless employee&.shift_start_time
     DateTime.new(clock_in.year, clock_in.month, clock_in.day,
@@ -162,7 +172,6 @@ class DailyTimeRecord < ApplicationRecord
                  employee.shift_start_time.sec)
   end
 
-  # Shift end DateTime for the record's date, handling overnight
   def shift_end_for_date
     return nil unless employee&.shift_end_time
     dt = DateTime.new(clock_in.year, clock_in.month, clock_in.day,
@@ -173,10 +182,8 @@ class DailyTimeRecord < ApplicationRecord
     dt
   end
 
-  # Prevent overlapping DTRs for same employee and date
   def no_time_overlap
     return unless valid_times? && employee
-
     overlapping = employee.daily_time_records
                       .where(date: date)
                       .where.not(id: id)
