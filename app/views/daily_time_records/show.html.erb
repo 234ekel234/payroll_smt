@@ -1,13 +1,25 @@
 <h1>Daily Time Record</h1>
 
 <p>
-  <strong>Employee:</strong> <%= @daily_time_record.employee.name %> (<%= @daily_time_record.employee.person_id %>)<br>
-  <strong>Date:</strong> <%= @daily_time_record.date %><br>
-  <strong>Clock In:</strong> <%= @daily_time_record.clock_in.strftime("%I:%M %p") if @daily_time_record.clock_in %><br>
-  <strong>Clock Out:</strong> <%= @daily_time_record.clock_out.strftime("%I:%M %p") if @daily_time_record.clock_out %><br>
+  <strong>Employee:</strong> <%= @daily_time_record.employee&.name || "N/A" %> 
+  (<%= @daily_time_record.employee&.person_id || "N/A" %>)<br>
+
+  <strong>Date:</strong> <%= @daily_time_record.date || "N/A" %><br>
+
+  <strong>Shift Start:</strong> <%= @daily_time_record.employee&.shift_start_time&.strftime("%I:%M %p") || "N/A" %><br>
+  <strong>Shift End:</strong> <%= @daily_time_record.employee&.shift_end_time&.strftime("%I:%M %p") || "N/A" %><br>
+
+  <strong>Clock In:</strong> <%= @daily_time_record.clock_in&.strftime("%I:%M %p") || "N/A" %><br>
+  <strong>Clock Out:</strong> <%= @daily_time_record.clock_out&.strftime("%I:%M %p") || "N/A" %><br>
+
+  <strong>Total Work (min):</strong> <%= @daily_time_record.total_work_minutes || 0 %><br>
+  <strong>Break (min):</strong> <%= @daily_time_record.total_break_minutes || 0 %><br>
+  <strong>Late (min):</strong> <%= @daily_time_record.late_minutes || 0 %><br>
+  <strong>Early Leave (min):</strong> <%= @daily_time_record.early_leave_minutes || 0 %><br>
   <strong>Night Diff (min):</strong> <%= @daily_time_record.night_diff_minutes || 0 %><br>
   <strong>Overtime (min):</strong> <%= @daily_time_record.overtime_minutes || 0 %><br>
-  <strong>Abnormal Situation:</strong> <%= @daily_time_record.abnormal_situation %>
+
+  <strong>Abnormal Situation:</strong> <%= @daily_time_record.abnormal_situation.presence || "None" %>
 </p>
 
 <div class="d-flex gap-2">

@@ -48,7 +48,8 @@ class DailyTimeRecordsController < ApplicationController
   # POST /daily_time_records/import_file
   def import_file
     if params[:file].present?
-      DailyTimeRecordImporter.new(file: params[:file]).import
+      importer = DailyTimeRecordImporter.new(file: params[:file])
+      importer.import
       redirect_to daily_time_records_path, notice: "DTRs imported successfully from file!"
     else
       redirect_to daily_time_records_path, alert: "Please attach a file to import."
@@ -58,7 +59,8 @@ class DailyTimeRecordsController < ApplicationController
   # POST /daily_time_records/import_google
   def import_google
     if params[:spreadsheet_id].present?
-      DailyTimeRecordImporter.new(google_sheet_id: params[:spreadsheet_id]).import
+      importer = DailyTimeRecordImporter.new(google_sheet_id: params[:spreadsheet_id])
+      importer.import
       redirect_to daily_time_records_path, notice: "DTRs imported successfully from Google Sheets!"
     else
       redirect_to daily_time_records_path, alert: "Please provide a Google Sheet ID."
@@ -71,7 +73,10 @@ class DailyTimeRecordsController < ApplicationController
     @daily_time_record = DailyTimeRecord.find(params[:id])
   end
 
+  # Strong parameters
   def daily_time_record_params
-    params.require(:daily_time_record).permit(:employee_id, :date, :clock_in, :clock_out, :abnormal_situation)
+    params.require(:daily_time_record).permit(
+      :employee_id, :date, :clock_in, :clock_out, :abnormal_situation
+    )
   end
 end

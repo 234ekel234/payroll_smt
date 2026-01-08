@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_20_075314) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_08_055403) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,7 +20,9 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_20_075314) do
     t.datetime "clock_out"
     t.datetime "created_at", null: false
     t.date "date"
+    t.integer "early_leave_minutes"
     t.bigint "employee_id", null: false
+    t.integer "late_minutes"
     t.integer "night_diff_minutes"
     t.integer "overtime_minutes"
     t.datetime "updated_at", null: false
