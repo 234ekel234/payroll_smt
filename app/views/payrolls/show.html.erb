@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @payroll %>
+
+<div>
+  <%= link_to "Edit this payroll", edit_payroll_path(@payroll) %> |
+  <%= link_to "Back to payrolls", payrolls_path %>
+
+  <%= button_to "Destroy this payroll", @payroll, method: :delete %>
+</div>

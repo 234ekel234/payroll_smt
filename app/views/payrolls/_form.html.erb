@@ -1,0 +1,97 @@
+<%= form_with(model: payroll) do |form| %>
+  <% if payroll.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(payroll.errors.count, "error") %> prohibited this payroll from being saved:</h2>
+
+      <ul>
+        <% payroll.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :employee_id, style: "display: block" %>
+    <%= form.text_field :employee_id %>
+  </div>
+
+  <div>
+    <%= form.label :start_date, style: "display: block" %>
+    <%= form.date_field :start_date %>
+  </div>
+
+  <div>
+    <%= form.label :end_date, style: "display: block" %>
+    <%= form.date_field :end_date %>
+  </div>
+
+  <div>
+    <%= form.label :daily_rate, style: "display: block" %>
+    <%= form.text_field :daily_rate %>
+  </div>
+
+  <div>
+    <%= form.label :days_worked, style: "display: block" %>
+    <%= form.number_field :days_worked %>
+  </div>
+
+  <div>
+    <%= form.label :allowance, style: "display: block" %>
+    <%= form.text_field :allowance %>
+  </div>
+
+  <div>
+    <%= form.label :basic_pay, style: "display: block" %>
+    <%= form.text_field :basic_pay %>
+  </div>
+
+  <div>
+    <%= form.label :overtime_pay, style: "display: block" %>
+    <%= form.text_field :overtime_pay %>
+  </div>
+
+  <div>
+    <%= form.label :rest_day_pay, style: "display: block" %>
+    <%= form.text_field :rest_day_pay %>
+  </div>
+
+  <div>
+    <%= form.label :holiday_pay, style: "display: block" %>
+    <%= form.text_field :holiday_pay %>
+  </div>
+
+  <div>
+    <%= form.label :night_diff_pay, style: "display: block" %>
+    <%= form.text_field :night_diff_pay %>
+  </div>
+
+  <div>
+    <%= form.label :gross_pay, style: "display: block" %>
+    <%= form.text_field :gross_pay %>
+  </div>
+
+  <div>
+    <%= form.label :total_deductions, style: "display: block" %>
+    <%= form.text_field :total_deductions %>
+  </div>
+
+  <div>
+    <%= form.label :net_pay, style: "display: block" %>
+    <%= form.text_field :net_pay %>
+  </div>
+
+  <div>
+    <%= form.label :processed_at, style: "display: block" %>
+    <%= form.datetime_field :processed_at %>
+  </div>
+
+  <div>
+    <%= form.label :status, style: "display: block" %>
+    <%= form.text_field :status %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

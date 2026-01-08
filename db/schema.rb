@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_08_070550) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_08_082958) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,6 +28,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_08_070550) do
     t.integer "overtime_minutes"
     t.datetime "updated_at", null: false
     t.index ["employee_id"], name: "index_daily_time_records_on_employee_id"
+  end
+
+  create_table "deductions", force: :cascade do |t|
+    t.decimal "amount"
+    t.string "applies_to"
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.string "deduction_type"
+    t.integer "employee_group_id"
+    t.string "name"
+    t.text "notes"
+    t.datetime "updated_at", null: false
   end
 
   create_table "employees", force: :cascade do |t|
@@ -50,6 +62,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_08_070550) do
     t.index ["person_id"], name: "index_employees_on_person_id", unique: true
   end
 
+  create_table "gov_deduction_brackets", force: :cascade do |t|
+    t.decimal "amount", precision: 12, scale: 2, null: false
+    t.datetime "created_at", null: false
+    t.integer "deduction_type", null: false
+    t.decimal "range_max", precision: 12, scale: 2, null: false
+    t.decimal "range_min", precision: 12, scale: 2, null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "holidays", force: :cascade do |t|
     t.string "applies_to"
     t.datetime "created_at", null: false
@@ -60,5 +81,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_08_070550) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "payrolls", force: :cascade do |t|
+    t.decimal "allowance"
+    t.decimal "basic_pay"
+    t.datetime "created_at", null: false
+    t.decimal "daily_rate"
+    t.integer "days_worked"
+    t.bigint "employee_id", null: false
+    t.date "end_date"
+    t.decimal "gross_pay"
+    t.decimal "holiday_pay"
+    t.decimal "net_pay"
+    t.decimal "night_diff_pay"
+    t.decimal "overtime_pay"
+    t.datetime "processed_at"
+    t.decimal "rest_day_pay"
+    t.date "start_date"
+    t.string "status"
+    t.decimal "total_deductions"
+    t.datetime "updated_at", null: false
+    t.index ["employee_id"], name: "index_payrolls_on_employee_id"
+  end
+
   add_foreign_key "daily_time_records", "employees"
+  add_foreign_key "payrolls", "employees"
 end
