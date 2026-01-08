@@ -1,0 +1,40 @@
+<%= form_with(model: holiday, local: true) do |form| %>
+  <% if holiday.errors.any? %>
+    <div class="alert alert-danger">
+      <h4>Errors:</h4>
+      <ul>
+        <% holiday.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-3">
+    <%= form.label :date, class: "form-label" %>
+    <%= form.date_field :date, class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :name, class: "form-label" %>
+    <%= form.text_field :name, class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :holiday_type, class: "form-label" %>
+    <%= form.select :holiday_type, ["Regular", "Special Non-Working"], {}, class: "form-select" %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :applies_to, class: "form-label" %>
+    <%= form.text_field :applies_to, placeholder: "e.g., all, managers, staff", class: "form-control" %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :notes, class: "form-label" %>
+    <%= form.text_area :notes, rows: 3, class: "form-control" %>
+  </div>
+
+  <%= form.submit class: "btn btn-primary" %>
+  <%= link_to "Back", holidays_path, class: "btn btn-secondary" %>
+<% end %>

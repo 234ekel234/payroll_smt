@@ -1,5 +1,6 @@
 # config/routes.rb
 Rails.application.routes.draw do
+  resources :holidays
   root "employees#index"
 
   resources :employees
@@ -11,6 +12,7 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :holidays
   # Example of other resources if needed
   # resources :payrolls
   # resources :deductions
