@@ -1,0 +1,12 @@
+<% content_for :title, "Editing pay multiplier" %>
+
+<h1>Editing pay multiplier</h1>
+
+<%= render "form", pay_multiplier: @pay_multiplier %>
+
+<br>
+
+<div>
+  <%= link_to "Show this pay multiplier", @pay_multiplier %> |
+  <%= link_to "Back to pay multipliers", pay_multipliers_path %>
+</div>

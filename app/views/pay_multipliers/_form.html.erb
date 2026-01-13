@@ -1,0 +1,47 @@
+<%= form_with(model: pay_multiplier) do |form| %>
+  <% if pay_multiplier.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(pay_multiplier.errors.count, "error") %> prohibited this pay_multiplier from being saved:</h2>
+
+      <ul>
+        <% pay_multiplier.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :code, style: "display: block" %>
+    <%= form.text_field :code %>
+  </div>
+
+  <div>
+    <%= form.label :name, style: "display: block" %>
+    <%= form.text_field :name %>
+  </div>
+
+  <div>
+    <%= form.label :holiday_type, style: "display: block" %>
+    <%= form.text_field :holiday_type %>
+  </div>
+
+  <div>
+    <%= form.label :rest_day, style: "display: block" %>
+    <%= form.checkbox :rest_day %>
+  </div>
+
+  <div>
+    <%= form.label :overtime, style: "display: block" %>
+    <%= form.checkbox :overtime %>
+  </div>
+
+  <div>
+    <%= form.label :base_multiplier, style: "display: block" %>
+    <%= form.text_field :base_multiplier %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

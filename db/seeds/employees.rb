@@ -1,6 +1,6 @@
 # db/seeds/employees.rb
 
-WORK_DAYS = Date::DAYNAMES[1..5] # Monday–Friday
+WORK_DAYS = Date::DAYNAMES[1..6] # Monday–Saturday
 
 employees = [
   {
@@ -11,8 +11,8 @@ employees = [
     allowance_per_day: 0,
     shift_start: Time.zone.parse("09:00"),
     shift_end:   Time.zone.parse("17:00"),
-    break_start: nil,
-    break_end: nil,
+    break_start: Time.zone.parse("012:00"),
+    break_end: Time.zone.parse("13:00"),
     schedule: "Regular",
     status_of_employment: "Active",
     landbank_atm: false,
@@ -26,8 +26,8 @@ employees = [
     allowance_per_day: 0,
     shift_start: Time.zone.parse("09:00"),
     shift_end:   Time.zone.parse("17:00"),
-    break_start: nil,
-    break_end: nil,
+    break_start: Time.zone.parse("12:00"),
+    break_end: Time.zone.parse("13:00"),
     schedule: "Regular",
     status_of_employment: "Active",
     landbank_atm: false,
@@ -39,10 +39,10 @@ employees = [
     company: "Your Company",
     basic_rate: 0,
     allowance_per_day: 0,
-    shift_start: Time.zone.parse("09:00"),
-    shift_end:   Time.zone.parse("17:00"),
-    break_start: nil,
-    break_end: nil,
+    shift_start: Time.zone.parse("18:00"),
+    shift_end:   Time.zone.parse("06:00"),
+    break_start: Time.zone.parse("00:00"),
+    break_end: Time.zone.parse("01:00"),
     schedule: "Regular",
     status_of_employment: "Active",
     landbank_atm: false,

@@ -1,0 +1,86 @@
+<p style="color: green"><%= notice %></p>
+
+<% content_for :title, "Pay Multipliers" %>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="mb-0">Pay Multipliers</h1>
+      <p class="text-muted">Configuration for payroll rate calculations</p>
+    </div>
+    <%= link_to "New Multiplier", new_pay_multiplier_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th class="ps-3">Code</th>
+            <th>Name</th>
+            <th>Holiday Type</th>
+            <th class="text-center">Rest Day</th>
+            <th class="text-center">Overtime</th>
+            <th class="text-center">Base Rate</th>
+            <th class="text-end pe-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pay_multipliers.each do |pm| %>
+            <tr>
+              <td class="ps-3">
+                <code class="fw-bold text-primary bg-light p-1 rounded"><%= pm.code %></code>
+              </td>
+              <td>
+                <span class="fw-semibold text-dark"><%= pm.name %></span>
+              </td>
+              <td>
+                <% case pm.holiday_type %>
+                <% when 'regular' %>
+                  <span class="badge rounded-pill bg-danger">Regular Holiday</span>
+                <% when 'special' %>
+                  <span class="badge rounded-pill bg-warning text-dark">Special Holiday</span>
+                <% else %>
+                  <span class="text-muted small">None</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if pm.rest_day %>
+                  <span class="text-info"><i class="bi bi-check-circle-fill"></i> Yes</span>
+                <% else %>
+                  <span class="text-muted">-</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <% if pm.overtime %>
+                  <span class="text-warning"><i class="bi bi-clock-fill"></i> Yes</span>
+                <% else %>
+                  <span class="text-muted">-</span>
+                <% end %>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-success py-2 px-3 fs-6">
+                  x<%= number_with_precision(pm.base_multiplier, precision: 2) %>
+                </span>
+                <br>
+                <small class="text-muted"><%= (pm.base_multiplier * 100).to_i %>%</small>
+              </td>
+              <td class="text-end pe-3">
+                <div class="btn-group">
+                  <%= link_to "View", pm, class: "btn btn-sm btn-outline-secondary" %>
+                  <%= link_to "Edit", edit_pay_multiplier_path(pm), class: "btn btn-sm btn-outline-primary" %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="mt-3">
+    <small class="text-muted">
+      * <strong>Base Rate</strong> is the factor applied to the basic hourly rate.
+    </small>
+  </div>
+</div>

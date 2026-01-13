@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_08_082958) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_09_103018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -81,6 +81,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_08_082958) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "pay_multipliers", force: :cascade do |t|
+    t.decimal "base_multiplier"
+    t.string "code"
+    t.datetime "created_at", null: false
+    t.string "holiday_type"
+    t.string "name"
+    t.boolean "overtime"
+    t.boolean "rest_day"
+    t.datetime "updated_at", null: false
+  end
+
   create_table "payrolls", force: :cascade do |t|
     t.decimal "allowance"
     t.decimal "basic_pay"
@@ -103,6 +114,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_08_082958) do
     t.index ["employee_id"], name: "index_payrolls_on_employee_id"
   end
 
+  create_table "time_slices", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "daily_time_record_id", null: false
+    t.integer "early_leave", default: 0, null: false
+    t.datetime "end_time"
+    t.boolean "holiday"
+    t.integer "late", default: 0, null: false
+    t.integer "minutes"
+    t.string "multiplier_name"
+    t.decimal "multiplier_percent", precision: 5, scale: 2
+    t.boolean "night_diff"
+    t.boolean "overtime", default: false, null: false
+    t.decimal "pay", precision: 12, scale: 2
+    t.boolean "rest_day"
+    t.datetime "start_time"
+    t.datetime "updated_at", null: false
+    t.index ["daily_time_record_id"], name: "index_time_slices_on_daily_time_record_id"
+  end
+
   add_foreign_key "daily_time_records", "employees"
   add_foreign_key "payrolls", "employees"
+  add_foreign_key "time_slices", "daily_time_records"
 end

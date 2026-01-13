@@ -12,7 +12,9 @@ class DailyTimeRecordImporter
     @sheet_range = sheet_range
   end
 
-  # Entry point
+  # ------------------------
+  # Entry Point
+  # ------------------------
   def import
     if @google_sheet_id
       import_from_google
@@ -37,37 +39,7 @@ class DailyTimeRecordImporter
 
     response = service.get_spreadsheet_values(@google_sheet_id, @sheet_range)
     response.values.each_with_index do |row, index|
-      person_id, fname, lname, date_str, clock_in_str, clock_out_str = row
-
-      employee = Employee.find_by(person_id: person_id)
-      unless employee
-        Rails.logger.warn "Row #{index + 2}: Employee #{person_id} not found, skipping"
-        next
-      end
-
-      date = parse_date(date_str)
-      unless date
-        Rails.logger.warn "Row #{index + 2}: Invalid date '#{date_str}', skipping"
-        next
-      end
-
-      clock_in = parse_time_for_date(clock_in_str, date)
-      clock_out = parse_time_for_date(clock_out_str, date)
-
-      unless clock_in && clock_out
-        Rails.logger.warn "Row #{index + 2}: Invalid clock in/out time, skipping"
-        next
-      end
-
-      record = DailyTimeRecord.find_or_initialize_by(employee: employee, date: date)
-      record.clock_in  = clock_in
-      record.clock_out = clock_out
-
-      if record.save
-        Rails.logger.info "Row #{index + 2}: Imported #{person_id} on #{date}"
-      else
-        Rails.logger.warn "Row #{index + 2}: Failed to save record: #{record.errors.full_messages.join(', ')}"
-      end
+      import_row(row, index + 2) # +2 because of header
     end
   end
 
@@ -79,58 +51,87 @@ class DailyTimeRecordImporter
     sheet = spreadsheet.sheet(0)
 
     sheet.each_row_streaming(offset: 1) do |row|
-      person_id, fname, lname, date_val, clock_in_val, clock_out_val = row.map { |c| c.cell_value }
+      values = row.map(&:cell_value)
+      import_row(values)
+    end
+  end
 
-      employee = Employee.find_by(person_id: person_id)
-      next unless employee
+  # ------------------------
+  # Process single row
+  # ------------------------
+  def import_row(row, row_number = nil)
+    person_id, fname, lname, date_val, clock_in_val, clock_out_val = row
 
-      date = parse_date(date_val)
-      next unless date
+    employee = Employee.find_by(person_id: person_id)
+    unless employee
+      log_warn("Row #{row_number}: Employee #{person_id} not found, skipping") if row_number
+      return
+    end
 
-      clock_in = parse_time_for_date(clock_in_val, date)
-      clock_out = parse_time_for_date(clock_out_val, date)
-      next unless clock_in && clock_out
+    date = parse_date(date_val)
+    unless date
+      log_warn("Row #{row_number}: Invalid date '#{date_val}', skipping") if row_number
+      return
+    end
 
-      record = DailyTimeRecord.find_or_initialize_by(employee: employee, date: date)
-      record.clock_in  = clock_in
-      record.clock_out = clock_out
+    clock_in  = parse_time_for_date(clock_in_val, date)
+    clock_out = parse_time_for_date(clock_out_val, date)
+    unless clock_in && clock_out
+      log_warn("Row #{row_number}: Invalid clock in/out time, skipping") if row_number
+      return
+    end
 
-      if record.save
-        Rails.logger.info "Imported #{person_id} on #{date}"
-      else
-        Rails.logger.warn "Failed to save record for #{person_id} on #{date}: #{record.errors.full_messages.join(', ')}"
-      end
+    # FIX: Handle overnight shifts (e.g., 10 PM to 6 AM)
+    clock_out += 1.day if clock_out <= clock_in
+
+    record = DailyTimeRecord.find_or_initialize_by(employee: employee, date: date)
+    record.clock_in  = clock_in
+    record.clock_out = clock_out
+
+    if record.save
+      log_info("Row #{row_number || ''}: Imported #{person_id} on #{date}")
+    else
+      log_warn("Row #{row_number || ''}: Failed to save record: #{record.errors.full_messages.join(', ')}")
     end
   end
 
   # ------------------------
   # Helpers
   # ------------------------
-  # Parse string like "9:00:00" and combine with date
   def parse_time_for_date(value, date)
     return nil if value.blank?
-    return value if value.is_a?(Time) || value.is_a?(DateTime)
-
+    
+    # FIX: Use Time.zone to respect Asia/Manila and prevent timezone shifting
     begin
-      t = Time.parse(value.to_s)
-      DateTime.new(date.year, date.month, date.day, t.hour, t.min, t.sec)
+      t = value.is_a?(Time) || value.is_a?(DateTime) ? value : Time.zone.parse(value.to_s)
+      return nil unless t
+
+      # Re-build local time using the App's timezone
+      Time.zone.local(date.year, date.month, date.day, t.hour, t.min, t.sec)
     rescue ArgumentError
       nil
     end
   end
 
-  # Parse date strings
   def parse_date(value)
     return nil if value.blank?
     return value if value.is_a?(Date) || value.is_a?(DateTime)
-
     Date.parse(value.to_s) rescue nil
   end
 
-  # Extract Google Sheet ID from full URL
   def extract_spreadsheet_id(url)
     match = url.match(%r{/d/([a-zA-Z0-9-_]+)})
     raise ArgumentError, "Invalid Google Sheet URL" unless match
     match[1]
+  end
+
+  def log_warn(message)
+    Rails.logger.warn(message)
+    puts message
+  end
+
+  def log_info(message)
+    Rails.logger.info(message)
+    puts message
   end
 end

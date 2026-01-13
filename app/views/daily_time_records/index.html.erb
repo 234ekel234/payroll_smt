@@ -25,9 +25,7 @@
       <th>Clock In</th>
       <th>Clock Out</th>
       <th>Total Work (min)</th>
-      <th>Late (min)</th>
-      <th>Early Leave (min)</th>
-      <th>Night Diff (min)</th>
+      <th>Night (min)</th>
       <th>Overtime (min)</th>
       <th>Holiday (min)</th>
       <th>Abnormal Situation</th>
@@ -38,16 +36,14 @@
     <% @daily_time_records.each_with_index do |dtr, idx| %>
       <tr>
         <td><%= idx + 1 %></td>
-        <td><%= dtr.employee&.name || "N/A" %></td>
+        <td><%= dtr.employee.name %></td>
         <td><%= dtr.date.strftime("%Y-%m-%d") %></td>
         <td><%= dtr.clock_in&.strftime("%I:%M %p") || "-" %></td>
         <td><%= dtr.clock_out&.strftime("%I:%M %p") || "-" %></td>
-        <td><%= dtr.total_work_minutes.to_i %></td>
-        <td><%= dtr.late_minutes.to_i %></td>
-        <td><%= dtr.early_leave_minutes.to_i %></td>
-        <td><%= dtr.night_diff_minutes.to_i %></td>
-        <td><%= dtr.overtime_minutes.to_i %></td>
-        <td><%= dtr.holiday_minutes.to_i %></td>
+        <td><%= dtr.total_work_minutes %></td>
+        <td><%= dtr.night_diff_minutes %></td>
+        <td><%= dtr.overtime_minutes %></td>
+        <td><%= dtr.holiday_minutes %></td>
         <td><%= dtr.abnormal_situation || "-" %></td>
         <td class="d-flex gap-1 flex-wrap">
           <%= link_to "Show", daily_time_record_path(dtr), class: "btn btn-sm btn-secondary" %>
