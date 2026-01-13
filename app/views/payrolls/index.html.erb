@@ -1,60 +1,101 @@
-<h1 class="mb-4">Payrolls</h1>
+<div class="container-fluid mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-wallet2"></i> Payroll Records</h1>
+    <%= link_to new_payroll_path, class: "btn btn-outline-primary" do %>
+      <i class="bi bi-plus-lg"></i> Add Manual Adjustment
+    <% end %>
+  </div>
 
-<div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
-  <%= link_to "Add New Payroll", new_payroll_path, class: "btn btn-primary" %>
-  <%= button_to "Generate Payroll", generate_payrolls_path, method: :post, class: "btn btn-success" %>
-</div>
-
-<div class="table-responsive">
-  <table class="table table-striped table-bordered table-hover table-sm">
-    <thead class="table-dark">
-      <tr>
-        <th>#</th>
-        <th>Employee</th>
-        <th>Period</th>
-        <th>Daily Rate</th>
-        <th>Days Worked</th>
-        <th>Basic Pay</th>
-        <th>Allowance</th>
-        <th>Overtime Pay</th>
-        <th>Rest Day Pay</th>
-        <th>Holiday Pay</th>
-        <th>Night Diff Pay</th>
-        <th>Gross Pay</th>
-        <th>Total Deductions</th>
-        <th>Net Pay</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @payrolls.each_with_index do |payroll, idx| %>
-        <tr>
-          <td><%= idx + 1 %></td>
-          <td><%= payroll.employee.name %></td>
-          <td>
-            <%= payroll.start_date.strftime("%b %d, %Y") %> – 
-            <%= payroll.end_date.strftime("%b %d, %Y") %>
-          </td>
-          <td><%= number_to_currency(payroll.daily_rate) %></td>
-          <td><%= payroll.days_worked %></td>
-          <td><%= number_to_currency(payroll.basic_pay) %></td>
-          <td><%= number_to_currency(payroll.allowance) %></td>
-          <td><%= number_to_currency(payroll.overtime_pay) %></td>
-          <td><%= number_to_currency(payroll.rest_day_pay) %></td>
-          <td><%= number_to_currency(payroll.holiday_pay) %></td>
-          <td><%= number_to_currency(payroll.night_diff_pay) %></td>
-          <td><%= number_to_currency(payroll.gross_pay) %></td>
-          <td><%= number_to_currency(payroll.total_deductions) %></td>
-          <td><%= number_to_currency(payroll.net_pay) %></td>
-          <td><%= payroll.status.titleize %></td>
-          <td class="d-flex gap-1 flex-wrap">
-            <%= link_to "Show", payroll_path(payroll), class: "btn btn-sm btn-secondary" %>
-            <%= link_to "Edit", edit_payroll_path(payroll), class: "btn btn-sm btn-warning" %>
-            <%= button_to "Delete", payroll_path(payroll), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-sm btn-danger" %>
-          </td>
-        </tr>
+  <div class="card mb-4 border-success shadow-sm">
+    <div class="card-header bg-success text-white">
+      <h5 class="card-title mb-0"><i class="bi bi-gear-fill"></i> Batch Generate Payroll</h5>
+    </div>
+    <div class="card-body bg-light">
+      <%= form_with url: generate_payrolls_path, method: :post, class: "row g-3 align-items-end" do |f| %>
+        <div class="col-md-3">
+          <%= f.label :start_date, "Cut-off Start", class: "form-label fw-bold" %>
+          <%= f.date_field :start_date, value: Date.today.beginning_of_month, class: "form-control" %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :end_date, "Cut-off End", class: "form-label fw-bold" %>
+          <%= f.date_field :end_date, value: Date.today.end_of_month, class: "form-control" %>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-success w-100" data-confirm="This will regenerate draft payrolls for the selected period. Proceed?">
+            <i class="bi bi-calculator"></i> Calculate All Employees
+          </button>
+        </div>
+        <div class="col-md-2">
+          <span class="text-muted small">Based on Time Slices</span>
+        </div>
       <% end %>
-    </tbody>
-  </table>
+    </div>
+  </div>
+
+  <div class="table-responsive shadow-sm">
+    <table class="table table-hover table-bordered align-middle bg-white">
+      <thead class="table-dark">
+        <tr>
+          <th class="text-center">#</th>
+          <th>Employee</th>
+          <th>Period</th>
+          <th class="text-end">Basic Pay</th>
+          <th class="text-end">OT Pay</th>
+          <th class="text-end">Night Diff</th>
+          <th class="text-end">Holiday/RD</th>
+          <th class="text-end bg-primary text-white">Gross Pay</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if @payrolls.any? %>
+          <% @payrolls.each_with_index do |payroll, idx| %>
+            <tr class="<%= 'table-warning' if payroll.status == 'draft' %>">
+              <td class="text-center text-muted"><%= idx + 1 %></td>
+              <td>
+                <div class="fw-bold"><%= payroll.employee.name %></div>
+                <small class="text-muted">Rate: <%= number_to_currency(payroll.daily_rate) %>/day</small>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border">
+                  <%= payroll.start_date.strftime("%b %d") %> - <%= payroll.end_date.strftime("%b %d, %Y") %>
+                </span>
+              </td>
+              <td class="text-end"><%= number_to_currency(payroll.basic_pay) %></td>
+              <td class="text-end text-primary"><%= number_to_currency(payroll.overtime_pay) %></td>
+              <td class="text-end text-indigo"><%= number_to_currency(payroll.night_diff_pay) %></td>
+              <td class="text-end"><%= number_to_currency(payroll.holiday_pay + payroll.rest_day_pay) %></td>
+              <td class="text-end fw-bold bg-light"><%= number_to_currency(payroll.gross_pay) %></td>
+              <td class="text-center">
+                <span class="badge <%= payroll.status == 'processed' ? 'bg-success' : 'bg-secondary' %>">
+                  <%= payroll.status.upcase %>
+                </span>
+              </td>
+              <td>
+                <div class="d-flex justify-content-center gap-1">
+                  <%= link_to payroll_path(payroll), class: "btn btn-sm btn-outline-info", title: "View Details" do %>
+                    <i class="bi bi-eye"></i>
+                  <% end %>
+                  <%= link_to edit_payroll_path(payroll), class: "btn btn-sm btn-outline-warning" do %>
+                    <i class="bi bi-pencil"></i>
+                  <% end %>
+                  <%= button_to payroll_path(payroll), method: :delete, class: "btn btn-sm btn-outline-danger", data: { confirm: "Permanently delete this record?" } do %>
+                    <i class="bi bi-trash"></i>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="10" class="text-center py-5 text-muted">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              No payroll records found for this period.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 </div>

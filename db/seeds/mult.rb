@@ -104,7 +104,7 @@ PayMultiplier.create!([
     holiday_type: "regular",
     rest_day: false,
     overtime: true,
-    base_multiplier: 1.60
+    base_multiplier: 2.60
   },
   {
     code: "RH-RD",
