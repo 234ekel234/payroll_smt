@@ -1,7 +1,9 @@
 class TimeSlicerService
   NIGHT_START_HOUR = 22
   NIGHT_END_HOUR   = 6
-  NIGHT_DIFF_ADD_ON = 10.0
+  # Keeping this constant for reference, but removing it from the multiplier math
+  # to prevent double-counting in the PayrollGenerator.
+  NIGHT_DIFF_ADD_ON = 10.0 
   LATE_GRACE_MINUTES = 5
   OVERTIME_GRACE_MINUTES = 30
 
@@ -74,23 +76,24 @@ class TimeSlicerService
   def build_slice(start_t, end_t, actual_in, qualifies_for_ot)
     duration = ((end_t - start_t) / 60).to_i
     
-    # CRITICAL FIX: Look up the holiday based on the specific slice date
-    # This ensures Jan 1 06:00 is seen as a holiday even if the shift started Dec 31
     current_date = start_t.to_date
     holiday = Holiday.find_by(date: current_date)
     h_type  = holiday ? holiday.holiday_type : "none"
 
     is_ot    = qualifies_for_ot && start_t >= @shift_end
+    # Night check handles overnight transitions via the boundaries in generate_slices
     is_night = start_t.hour >= NIGHT_START_HOUR || start_t.hour < NIGHT_END_HOUR
     is_rest  = @employee.work_days.exclude?(start_t.strftime("%A"))
     
-    # Generate the additive code (e.g., RH-OT)
     multiplier_code = build_multiplier_code(h_type, is_rest, is_ot)
     pay_multiplier  = PayMultiplier.find_by(code: multiplier_code)
     
-    # Use float for math safety
     base_rate = pay_multiplier ? pay_multiplier.base_multiplier.to_f : 1.0
-    final_multiplier_percent = (base_rate * 100.0) + (is_night ? NIGHT_DIFF_ADD_ON : 0)
+    
+    # NEW LOGIC: We only store the base rate (Regular, Holiday, or OT multiplier).
+    # We NO LONGER add NIGHT_DIFF_ADD_ON here because the PayrollGenerator 
+    # handles the 10% premium separately to keep the Basic Pay line item clean.
+    final_multiplier_percent = (base_rate * 100.0)
 
     {
       start_time: start_t,
@@ -110,7 +113,6 @@ class TimeSlicerService
   def build_multiplier_code(h_type, rest, ot)
     code_parts = []
     
-    # Match strings to your seed exactly
     case h_type.to_s.downcase
     when "regular" then code_parts << "RH"
     when "special" then code_parts << "SNWH"
