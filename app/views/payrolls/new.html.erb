@@ -1,11 +1,21 @@
-<% content_for :title, "New payroll" %>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><%= link_to 'Payroll List', payrolls_path %></li>
+          <li class="breadcrumb-item active">New Payroll Entry</li>
+        </ol>
+      </nav>
 
-<h1>New payroll</h1>
-
-<%= render "form", payroll: @payroll %>
-
-<br>
-
-<div>
-  <%= link_to "Back to payrolls", payrolls_path %>
+      <div class="card shadow border-0">
+        <div class="card-header bg-dark text-white py-3">
+          <h4 class="mb-0"><i class="bi bi-calculator-fill me-2"></i> Payroll Calculation & Adjustments</h4>
+        </div>
+        <div class="card-body p-4">
+          <%= render "form", payroll: @payroll %>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

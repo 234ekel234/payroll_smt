@@ -1,97 +1,86 @@
-<%= form_with(model: payroll) do |form| %>
-  <% if payroll.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(payroll.errors.count, "error") %> prohibited this payroll from being saved:</h2>
-
-      <ul>
-        <% payroll.errors.each do |error| %>
-          <li><%= error.full_message %></li>
-        <% end %>
-      </ul>
+<%= form_with(model: payroll, id: "payroll-form") do |f| %>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <%= f.label :employee_id, class: "form-label fw-bold" %>
+      <%= f.collection_select :employee_id, Employee.all, :id, :name, { prompt: "Select Employee" }, { class: "form-select shadow-sm" } %>
     </div>
-  <% end %>
+    <div class="col-md-4">
+      <%= f.label :gross_pay, "Basic Gross for Period", class: "form-label fw-bold" %>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text">₱</span>
+        <%= f.number_field :gross_pay, step: :any, class: "form-control", placeholder: "0.00" %>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :status, class: "form-label fw-bold" %>
+      <%= f.select :status, [['Draft', 'draft'], ['Processed', 'processed']], {}, { class: "form-select" } %>
+    </div>
 
-  <div>
-    <%= form.label :employee_id, style: "display: block" %>
-    <%= form.text_field :employee_id %>
-  </div>
+    <hr class="my-5">
 
-  <div>
-    <%= form.label :start_date, style: "display: block" %>
-    <%= form.date_field :start_date %>
-  </div>
+    <div class="row">
+      <div class="col-md-5 border-end">
+        <h5 class="text-primary mb-3"><i class="bi bi-bank"></i> Statutory Deductions</h5>
+        <div class="p-3 bg-light rounded border">
+          <%= f.collection_check_boxes :deduction_ids, Deduction.where(active: true), :id, :name do |b| %>
+            <div class="form-check mb-2">
+              <%# Pre-checks if the employee has this deduction assigned by default %>
+              <%= b.check_box(class: "form-check-input", checked: payroll.employee&.deductions&.include?(b.object)) %>
+              <%= b.label(class: "form-check-label fw-semibold") %>
+              <div class="small text-muted"><%= b.object.category %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
 
-  <div>
-    <%= form.label :end_date, style: "display: block" %>
-    <%= form.date_field :end_date %>
-  </div>
+      <div class="col-md-7">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="text-danger mb-0"><i class="bi bi-pencil-square"></i> Manual Adjustments</h5>
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="addManualRow()">
+            <i class="bi bi-plus-lg"></i> Add Row
+          </button>
+        </div>
 
-  <div>
-    <%= form.label :daily_rate, style: "display: block" %>
-    <%= form.text_field :daily_rate %>
-  </div>
+        <div id="manual-deductions-list">
+          <%= f.fields_for :payroll_deductions do |pd| %>
+            <% if pd.object.deduction_id.nil? %>
+              <div class="input-group mb-2 manual-row-item">
+                <%= pd.text_field :note, placeholder: "Description (e.g. Loan Payment)", class: "form-control" %>
+                <span class="input-group-text">₱</span>
+                <%= pd.number_field :amount, step: :any, placeholder: "0.00", class: "form-control" %>
+                <button type="button" class="btn btn-outline-secondary" onclick="this.closest('.manual-row-item').remove()">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+        <p class="small text-muted mt-2 fst-italic text-end">Note: Master deductions will be calculated automatically upon saving.</p>
+      </div>
+    </div>
 
-  <div>
-    <%= form.label :days_worked, style: "display: block" %>
-    <%= form.number_field :days_worked %>
-  </div>
-
-  <div>
-    <%= form.label :allowance, style: "display: block" %>
-    <%= form.text_field :allowance %>
-  </div>
-
-  <div>
-    <%= form.label :basic_pay, style: "display: block" %>
-    <%= form.text_field :basic_pay %>
-  </div>
-
-  <div>
-    <%= form.label :overtime_pay, style: "display: block" %>
-    <%= form.text_field :overtime_pay %>
-  </div>
-
-  <div>
-    <%= form.label :rest_day_pay, style: "display: block" %>
-    <%= form.text_field :rest_day_pay %>
-  </div>
-
-  <div>
-    <%= form.label :holiday_pay, style: "display: block" %>
-    <%= form.text_field :holiday_pay %>
-  </div>
-
-  <div>
-    <%= form.label :night_diff_pay, style: "display: block" %>
-    <%= form.text_field :night_diff_pay %>
-  </div>
-
-  <div>
-    <%= form.label :gross_pay, style: "display: block" %>
-    <%= form.text_field :gross_pay %>
-  </div>
-
-  <div>
-    <%= form.label :total_deductions, style: "display: block" %>
-    <%= form.text_field :total_deductions %>
-  </div>
-
-  <div>
-    <%= form.label :net_pay, style: "display: block" %>
-    <%= form.text_field :net_pay %>
-  </div>
-
-  <div>
-    <%= form.label :processed_at, style: "display: block" %>
-    <%= form.datetime_field :processed_at %>
-  </div>
-
-  <div>
-    <%= form.label :status, style: "display: block" %>
-    <%= form.text_field :status %>
-  </div>
-
-  <div>
-    <%= form.submit %>
+    <div class="col-12 mt-5 py-3 border-top text-center">
+      <%= f.submit "Save & Finalize Payroll", class: "btn btn-success btn-lg px-5 shadow" %>
+    </div>
   </div>
 <% end %>
+
+<script>
+  function addManualRow() {
+    const list = document.getElementById('manual-deductions-list');
+    const id = new Date().getTime(); // Unique ID for nested attributes
+    const row = `
+      <div class="input-group mb-2 manual-row-item animate__animated animate__fadeInDown">
+        <input type="text" name="payroll[payroll_deductions_attributes][${id}][note]" 
+               placeholder="Description" class="form-control" required>
+        <span class="input-group-text">₱</span>
+        <input type="number" name="payroll[payroll_deductions_attributes][${id}][amount]" 
+               step="any" placeholder="0.00" class="form-control" required>
+        <button type="button" class="btn btn-outline-secondary" onclick="this.closest('.manual-row-item').remove()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+    `;
+    list.insertAdjacentHTML('beforeend', row);
+  }
+</script>

@@ -1,5 +1,6 @@
 # config/routes.rb
 Rails.application.routes.draw do
+  resources :deductions
   resources :pay_multipliers
   resources :payrolls
   resources :holidays

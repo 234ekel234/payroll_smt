@@ -1,0 +1,11 @@
+<% content_for :title, "New deduction" %>
+
+<h1>New deduction</h1>
+
+<%= render "form", deduction: @deduction %>
+
+<br>
+
+<div>
+  <%= link_to "Back to deductions", deductions_path %>
+</div>

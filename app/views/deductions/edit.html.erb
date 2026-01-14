@@ -1,0 +1,12 @@
+<% content_for :title, "Editing deduction" %>
+
+<h1>Editing deduction</h1>
+
+<%= render "form", deduction: @deduction %>
+
+<br>
+
+<div>
+  <%= link_to "Show this deduction", @deduction %> |
+  <%= link_to "Back to deductions", deductions_path %>
+</div>

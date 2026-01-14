@@ -1,0 +1,42 @@
+<%= form_with(model: deduction, class: "row g-3") do |f| %>
+  <div class="col-md-8">
+    <%= f.label :name, class: "form-label fw-bold" %>
+    <%= f.text_field :name, class: "form-control", placeholder: "e.g., SSS, PhilHealth, Cash Advance" %>
+  </div>
+
+  <div class="col-md-4">
+    <%= f.label :category, class: "form-label fw-bold" %>
+    <%= f.select :category, ['Government', 'Loan', 'Company Fee', 'Adjustment'], { prompt: "Select Category" }, { class: "form-select" } %>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :amount, "Value/Rate", class: "form-label fw-bold" %>
+    <div class="input-group">
+      <%= f.number_field :amount, step: :any, class: "form-control" %>
+      <%= f.select :amount_type, [['Fixed (₱)', 'fixed'], ['Percentage (%)', 'percentage']], {}, { class: "form-select" } %>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <%= f.label :deduction_type, "Calculation Logic", class: "form-label fw-bold" %>
+    <%= f.select :deduction_type, [['Standard', 'standard'], ['Government Table', 'government']], {}, { class: "form-select" } %>
+    <small class="text-muted">Use 'Government Table' for SSS/PhilHealth math.</small>
+  </div>
+
+  <div class="col-12">
+    <%= f.label :notes, class: "form-label fw-bold" %>
+    <%= f.text_area :notes, rows: 2, class: "form-control" %>
+  </div>
+
+  <div class="col-12">
+    <div class="form-check form-switch">
+      <%= f.check_box :active, class: "form-check-input", role: "switch" %>
+      <%= f.label :active, "Active (Available for Payroll)", class: "form-check-label" %>
+    </div>
+  </div>
+
+  <div class="col-12 mt-4">
+    <%= f.submit class: "btn btn-primary px-4" %>
+    <%= link_to "Cancel", deductions_path, class: "btn btn-link text-muted" %>
+  </div>
+<% end %>

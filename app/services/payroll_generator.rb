@@ -1,19 +1,28 @@
 class PayrollGenerator
-  def initialize(start_date:, end_date:, employees:)
-    @start_date = start_date
-    @end_date   = end_date
-    @employees  = Array(employees) # Handles both a single employee or a collection
+  def initialize(start_date:, end_date:, employees:, deduction_ids: [])
+    @start_date    = start_date
+    @end_date      = end_date
+    @employees     = Array(employees)
+    @deduction_ids = deduction_ids # The "on-the-fly" selection from your batch form
   end
 
   def generate!
     Payroll.transaction do
       @employees.each do |employee|
-        # 1. Guard Clause: Remove existing 'draft' payroll for this period 
-        # to allow for re-calculation/overwriting.
-        Payroll.where(employee: employee, start_date: @start_date, end_date: @end_date, status: 'draft').destroy_all
+        # 1. Clear existing 'draft' to avoid duplicates
+        Payroll.where(
+          employee: employee, 
+          start_date: @start_date, 
+          end_date: @end_date, 
+          status: 'draft'
+        ).destroy_all
         
-        # 2. Process individual employee
-        process_employee(employee)
+        # 2. Process earnings and create payroll
+        payroll = process_employee(employee)
+
+        # 3. Apply the selected deductions "on-the-fly"
+        # This will calculate SSS, PhilHealth, etc., based on the gross_pay just created
+        payroll.apply_deductions(@deduction_ids) if @deduction_ids.present?
       end
     end
   end
@@ -23,14 +32,12 @@ class PayrollGenerator
   def process_employee(employee)
     hourly_rate = employee.basic_rate / 8.0
     
-    # Fetch slices associated with this employee's DTRs within the range
     slices = TimeSlice.joins(:daily_time_record)
                       .where(daily_time_records: { 
                         employee_id: employee.id, 
                         date: @start_date..@end_date 
                       })
 
-    # Initialize totals
     totals = {
       basic_pay: 0.0,
       overtime_pay: 0.0,
@@ -41,10 +48,8 @@ class PayrollGenerator
     }
 
     slices.each do |slice|
-      # Base formula: (Mins / 60) * Hourly Rate * (Multiplier / 100)
       slice_total = (slice.minutes / 60.0) * hourly_rate * (slice.multiplier_percent / 100.0)
 
-      # Categorize the pay
       if slice.overtime
         totals[:overtime_pay] += slice_total
       elsif slice.holiday
@@ -55,7 +60,6 @@ class PayrollGenerator
         totals[:basic_pay] += slice_total
       end
 
-      # Isolate the Night Diff premium (extra 10%) for display purposes if needed
       if slice.night_diff
         totals[:night_diff_pay] += (slice.minutes / 60.0) * hourly_rate * 0.10
       end
@@ -63,7 +67,7 @@ class PayrollGenerator
 
     gross_pay = totals[:basic_pay] + totals[:overtime_pay] + totals[:holiday_pay] + totals[:rest_day_pay]
 
-    # Create the record
+    # Return the created record so we can call apply_deductions on it
     Payroll.create!(
       employee: employee,
       start_date: @start_date,
@@ -76,7 +80,8 @@ class PayrollGenerator
       rest_day_pay: totals[:rest_day_pay],
       night_diff_pay: totals[:night_diff_pay],
       gross_pay: gross_pay,
-      net_pay: gross_pay, # Deductions logic to be added later
+      # Initialize net_pay as gross; apply_deductions will update this correctly
+      net_pay: gross_pay, 
       status: "draft",
       processed_at: Time.current
     )

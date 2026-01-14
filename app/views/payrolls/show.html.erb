@@ -1,10 +1,99 @@
-<p style="color: green"><%= notice %></p>
+<div class="container mt-5 mb-5">
+  <div class="d-print-none mb-4">
+    <%= link_to payrolls_path, class: "btn btn-secondary shadow-sm" do %><i class="bi bi-arrow-left"></i> Back<% end %>
+    <button onclick="window.print()" class="btn btn-primary shadow-sm"><i class="bi bi-printer"></i> Print Payslip</button>
+  </div>
 
-<%= render @payroll %>
+  <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
+    <div class="card-body p-5">
+      <div class="row mb-4">
+        <div class="col-6">
+          <h2 class="fw-bold mb-0 text-primary">PAYSLIP</h2>
+          <p class="text-muted">Payroll ID: #<%= @payroll.id %> | Date: <%= Date.today.strftime("%B %d, %Y") %></p>
+        </div>
+        <div class="col-6 text-end">
+          <h5 class="fw-bold mb-0"><%= @payroll.employee.name %></h5>
+          <p class="text-muted small mb-1"><%= @payroll.employee.person_id %></p>
+          <span class="badge <%= @payroll.status == 'processed' ? 'bg-success' : 'bg-warning text-dark' %>">
+            <%= (@payroll.status || 'DRAFT').upcase %>
+          </span>
+        </div>
+      </div>
 
-<div>
-  <%= link_to "Edit this payroll", edit_payroll_path(@payroll) %> |
-  <%= link_to "Back to payrolls", payrolls_path %>
+      <div class="row bg-light rounded p-3 mb-4 g-2">
+        <div class="col-sm-6"><strong>Period:</strong> <%= @payroll.start_date&.strftime("%b %d") %> - <%= @payroll.end_date&.strftime("%b %d, %Y") %></div>
+        <div class="col-sm-6 text-sm-end"><strong>Daily Rate:</strong> <%= number_to_currency(@payroll.daily_rate || 0, unit: "₱") %></div>
+      </div>
 
-  <%= button_to "Destroy this payroll", @payroll, method: :delete %>
+      <div class="row g-5">
+        <div class="col-md-6 border-end">
+          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Earnings</h6>
+          <div class="d-flex justify-content-between mb-1">
+            <span>Basic Pay</span>
+            <span><%= number_to_currency(@payroll.basic_pay || 0, unit: "₱") %></span>
+          </div>
+
+          <% # Using .to_f to ensure nil becomes 0.0 %>
+          <% if @payroll.overtime_pay.to_f > 0 %>
+            <div class="d-flex justify-content-between mb-1 text-primary">
+              <span>Overtime</span>
+              <span>+ <%= number_to_currency(@payroll.overtime_pay, unit: "₱") %></span>
+            </div>
+          <% end %>
+
+          <% if @payroll.night_diff_pay.to_f > 0 %>
+            <div class="d-flex justify-content-between mb-1 text-primary">
+              <span>Night Differential</span>
+              <span>+ <%= number_to_currency(@payroll.night_diff_pay, unit: "₱") %></span>
+            </div>
+          <% end %>
+
+          <% if (@payroll.holiday_pay.to_f + @payroll.rest_day_pay.to_f) > 0 %>
+            <div class="d-flex justify-content-between mb-1 text-primary">
+              <span>Holiday / Rest Day</span>
+              <span>+ <%= number_to_currency(@payroll.holiday_pay.to_f + @payroll.rest_day_pay.to_f, unit: "₱") %></span>
+            </div>
+          <% end %>
+
+          <div class="d-flex justify-content-between fw-bold pt-2 border-top mt-3">
+            <span>GROSS PAY</span>
+            <span><%= number_to_currency(@payroll.gross_pay || 0, unit: "₱") %></span>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Deductions</h6>
+          <% if @payroll.payroll_deductions.any? %>
+            <% @payroll.payroll_deductions.each do |pd| %>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="small text-truncate" style="max-width: 150px;"><%= pd.note %></span>
+                <span class="text-danger small">- <%= number_to_currency(pd.amount || 0, unit: "₱") %></span>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-muted small italic py-2">No deductions applied.</div>
+          <% end %>
+
+          <div class="d-flex justify-content-between fw-bold pt-2 border-top mt-3 text-danger">
+            <span>TOTAL DEDUCTIONS</span>
+            <span>- <%= number_to_currency(@payroll.total_deductions || 0, unit: "₱") %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-5 p-4 bg-dark text-white rounded text-center shadow">
+        <h6 class="text-uppercase small mb-1 opacity-75">Net Take Home Pay</h6>
+        <h1 class="display-5 fw-bold mb-0"><%= number_to_currency(@payroll.net_pay || 0, unit: "₱") %></h1>
+      </div>
+
+      <div class="mt-5 row text-center d-none d-print-flex">
+        <div class="col-6">
+          <div class="border-top pt-2 mx-4 mt-4">Employee Signature</div>
+        </div>
+        <div class="col-6">
+          <div class="border-top pt-2 mx-4 mt-4">Authorized Signature</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

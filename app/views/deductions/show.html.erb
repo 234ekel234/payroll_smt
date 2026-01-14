@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @deduction %>
+
+<div>
+  <%= link_to "Edit this deduction", edit_deduction_path(@deduction) %> |
+  <%= link_to "Back to deductions", deductions_path %>
+
+  <%= button_to "Destroy this deduction", @deduction, method: :delete %>
+</div>
