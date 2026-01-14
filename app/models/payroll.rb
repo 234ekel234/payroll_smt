@@ -11,19 +11,18 @@ class Payroll < ApplicationRecord
   accepts_nested_attributes_for :payroll_deductions, allow_destroy: true, reject_if: :all_blank
 
   def apply_deductions(selected_master_ids)
-    # Ensure selected_master_ids is an array of IDs, filtering out blanks
     selected_ids = Array(selected_master_ids).reject(&:blank?)
 
     transaction do
-      # 1. Clear existing MASTER deductions (keep manual ones)
+      # 1. Clear only Master deductions (linked to the Deduction table)
+      # This leaves manual notes alone, but we no longer need to "protect" Lateness 
+      # because it's not a deduction record anymore.
       self.payroll_deductions.where.not(deduction_id: nil).destroy_all
 
-      # 2. Add Master Deductions (SSS, PhilHealth, etc.)
+      # 2. Add Master Deductions
       if selected_ids.any?
         Deduction.where(id: selected_ids).each do |d|
-          # We pass gross_pay to the deduction model to handle percentage math
           amt = d.calculate_for(self.gross_pay.to_f)
-          
           self.payroll_deductions.create!(
             deduction: d, 
             amount: amt, 
@@ -33,7 +32,6 @@ class Payroll < ApplicationRecord
       end
 
       # 3. Final Tally
-      # Use reload to ensure we are summing the newly created records + manual ones
       total = self.payroll_deductions.reload.sum(:amount)
       
       self.update_columns(

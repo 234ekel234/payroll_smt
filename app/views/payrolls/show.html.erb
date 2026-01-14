@@ -1,7 +1,12 @@
 <div class="container mt-5 mb-5">
-  <div class="d-print-none mb-4">
-    <%= link_to payrolls_path, class: "btn btn-secondary shadow-sm" do %><i class="bi bi-arrow-left"></i> Back<% end %>
-    <button onclick="window.print()" class="btn btn-primary shadow-sm"><i class="bi bi-printer"></i> Print Payslip</button>
+  <div class="d-print-none mb-4 d-flex justify-content-between">
+    <div>
+      <%= link_to payrolls_path, class: "btn btn-secondary shadow-sm" do %><i class="bi bi-arrow-left"></i> Back<% end %>
+      <button onclick="window.print()" class="btn btn-primary shadow-sm"><i class="bi bi-printer"></i> Print Payslip</button>
+    </div>
+    <% if @payroll.status == 'draft' %>
+      <%= button_to "Process Payroll", "#", class: "btn btn-success shadow-sm" %>
+    <% end %>
   </div>
 
   <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
@@ -20,20 +25,35 @@
         </div>
       </div>
 
-      <div class="row bg-light rounded p-3 mb-4 g-2">
-        <div class="col-sm-6"><strong>Period:</strong> <%= @payroll.start_date&.strftime("%b %d") %> - <%= @payroll.end_date&.strftime("%b %d, %Y") %></div>
-        <div class="col-sm-6 text-sm-end"><strong>Daily Rate:</strong> <%= number_to_currency(@payroll.daily_rate || 0, unit: "₱") %></div>
+      <div class="row bg-light rounded p-3 mb-4 g-2 border">
+        <div class="col-sm-4">
+          <small class="text-muted d-block">Period</small>
+          <strong><%= @payroll.start_date&.strftime("%b %d") %> - <%= @payroll.end_date&.strftime("%b %d, %Y") %></strong>
+        </div>
+        <div class="col-sm-3 border-start">
+          <small class="text-muted d-block">Days Worked</small>
+          <strong><%= @payroll.days_worked %> Days</strong>
+        </div>
+        <div class="col-sm-3 border-start">
+          <small class="text-muted d-block">Late Minutes</small>
+          <strong class="<%= 'text-danger' if @payroll.daily_time_records.sum(:late_minutes) > 0 %>">
+            <%= @payroll.daily_time_records.sum(:late_minutes) %> mins
+          </strong>
+        </div>
+        <div class="col-sm-2 text-sm-end">
+          <small class="text-muted d-block">Daily Rate</small>
+          <strong><%= number_to_currency(@payroll.daily_rate || 0, unit: "₱") %></strong>
+        </div>
       </div>
 
       <div class="row g-5">
         <div class="col-md-6 border-end">
           <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Earnings</h6>
           <div class="d-flex justify-content-between mb-1">
-            <span>Basic Pay</span>
+            <span>Basic Pay <small class="text-muted">(Actual Work)</small></span>
             <span><%= number_to_currency(@payroll.basic_pay || 0, unit: "₱") %></span>
           </div>
 
-          <% # Using .to_f to ensure nil becomes 0.0 %>
           <% if @payroll.overtime_pay.to_f > 0 %>
             <div class="d-flex justify-content-between mb-1 text-primary">
               <span>Overtime</span>
@@ -59,10 +79,13 @@
             <span>GROSS PAY</span>
             <span><%= number_to_currency(@payroll.gross_pay || 0, unit: "₱") %></span>
           </div>
+          <p class="text-muted mt-2" style="font-size: 0.75rem; font-style: italic;">
+            * Earnings are computed based on actual minutes logged in DTR.
+          </p>
         </div>
 
         <div class="col-md-6">
-          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Deductions</h6>
+          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Statutory Deductions</h6>
           <% if @payroll.payroll_deductions.any? %>
             <% @payroll.payroll_deductions.each do |pd| %>
               <div class="d-flex justify-content-between mb-1">
