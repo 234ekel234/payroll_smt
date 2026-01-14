@@ -1,9 +1,6 @@
 class TimeSlicerService
   NIGHT_START_HOUR = 22
   NIGHT_END_HOUR   = 6
-  # Keeping this constant for reference, but removing it from the multiplier math
-  # to prevent double-counting in the PayrollGenerator.
-  NIGHT_DIFF_ADD_ON = 10.0 
   LATE_GRACE_MINUTES = 5
   OVERTIME_GRACE_MINUTES = 30
 
@@ -47,7 +44,7 @@ class TimeSlicerService
     minutes_past_shift = ((c_out - @shift_end) / 60).to_i
     qualifies_for_ot = minutes_past_shift > OVERTIME_GRACE_MINUTES
 
-    # Define Boundaries
+    # Define Boundaries for Slicing
     effective_out = qualifies_for_ot ? c_out : [c_out, @shift_end].min
     
     b = [c_in, effective_out]
@@ -56,12 +53,16 @@ class TimeSlicerService
     b << @break_start if @break_start&.between?(c_in, effective_out)
     b << @break_end   if @break_end&.between?(c_in, effective_out)
     
-    # Night boundaries
+    # Night boundaries and Midnight transitions
     (c_in.to_date..effective_out.to_date).each do |d|
       ns = d.to_time.change(hour: NIGHT_START_HOUR)
       ne = (d + 1.day).to_time.change(hour: NIGHT_END_HOUR)
       b << ns if ns.between?(c_in, effective_out)
       b << ne if ne.between?(c_in, effective_out)
+      
+      # Crucial: Split at Midnight to detect Holiday changes
+      midnight = (d + 1.day).to_time.midnight
+      b << midnight if midnight.between?(c_in, effective_out)
     end
 
     sorted = b.compact.sort.uniq
@@ -70,31 +71,29 @@ class TimeSlicerService
       build_slice(s_t, e_t, c_in, qualifies_for_ot) 
     end
 
+    # Remove the unpaid break segment
     all_segments.reject { |s| slice_is_break?(s[:start_time], s[:end_time]) }
   end
 
   def build_slice(start_t, end_t, actual_in, qualifies_for_ot)
     duration = ((end_t - start_t) / 60).to_i
     
+    # Holiday Check (Fixed: Using holiday_type based on your error log)
     current_date = start_t.to_date
     holiday = Holiday.find_by(date: current_date)
-    h_type  = holiday ? holiday.holiday_type : "none"
+    h_type  = holiday ? holiday.holiday_type.to_s.downcase : "none"
 
     is_ot    = qualifies_for_ot && start_t >= @shift_end
-    # Night check handles overnight transitions via the boundaries in generate_slices
     is_night = start_t.hour >= NIGHT_START_HOUR || start_t.hour < NIGHT_END_HOUR
     is_rest  = @employee.work_days.exclude?(start_t.strftime("%A"))
     
+    # Determine the code for PayMultiplier lookup
     multiplier_code = build_multiplier_code(h_type, is_rest, is_ot)
     pay_multiplier  = PayMultiplier.find_by(code: multiplier_code)
     
+    # Default to x1.0 if multiplier code is not found in database
     base_rate = pay_multiplier ? pay_multiplier.base_multiplier.to_f : 1.0
     
-    # NEW LOGIC: We only store the base rate (Regular, Holiday, or OT multiplier).
-    # We NO LONGER add NIGHT_DIFF_ADD_ON here because the PayrollGenerator 
-    # handles the 10% premium separately to keep the Basic Pay line item clean.
-    final_multiplier_percent = (base_rate * 100.0)
-
     {
       start_time: start_t,
       end_time: end_t,
@@ -105,7 +104,7 @@ class TimeSlicerService
       holiday: h_type != "none",
       multiplier_code: multiplier_code,
       multiplier_name: pay_multiplier&.name || multiplier_code.humanize,
-      multiplier_percent: final_multiplier_percent,
+      multiplier_percent: (base_rate * 100.0),
       late: (start_t == actual_in) ? calculate_late(actual_in) : 0
     }
   end
@@ -113,14 +112,21 @@ class TimeSlicerService
   def build_multiplier_code(h_type, rest, ot)
     code_parts = []
     
-    case h_type.to_s.downcase
-    when "regular" then code_parts << "RH"
-    when "special" then code_parts << "SNWH"
+    # 1. Map holiday strings to your specific codes
+    case h_type
+    when "regular" 
+      code_parts << "RH"
+    when "special", "special non-working" 
+      code_parts << "SNWH"
     end
 
+    # 2. Add Rest Day
     code_parts << "RD" if rest
+
+    # 3. Add Overtime
     code_parts << "OT" if ot
 
+    # 4. Final Formatting
     if code_parts.empty?
       "REGULAR"
     elsif code_parts == ["OT"]
@@ -151,8 +157,8 @@ class TimeSlicerService
     {
       total_work_minutes: slices.sum { |s| s[:minutes] },
       late_minutes: calculate_late(@dtr.clock_in),
-      ot_minutes: slices.select { |s| s[:overtime] }.sum { |s| s[:minutes] },
-      night_minutes: slices.select { |s| s[:night_diff] }.sum { |s| s[:minutes] },
+      overtime_minutes: slices.select { |s| s[:overtime] }.sum { |s| s[:minutes] },
+      night_diff_minutes: slices.select { |s| s[:night_diff] }.sum { |s| s[:minutes] },
       holiday_minutes: slices.select { |s| s[:holiday] }.sum { |s| s[:minutes] },
       slices: slices
     }
