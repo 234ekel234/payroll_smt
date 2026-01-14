@@ -7,7 +7,7 @@ class TimeSlicerService
   def initialize(dtr)
     @dtr = dtr
     @employee = dtr.employee
-    @date = dtr.date
+    @date = dtr.date # This is the "Reporting Date" for the shift
 
     # 1. Normalize and sequence shift times
     @shift_start = normalize_time(@employee.shift_start)
@@ -18,7 +18,11 @@ class TimeSlicerService
       @shift_end += 1.day
     end
 
-    # 2. Normalize and sequence break times
+    # 2. LOCK REST DAY STATUS BASED ON START DATE (Shift-Basis)
+    # This ensures if the shift starts on a Sunday, the whole shift is a Rest Day.
+    @is_shift_on_rest_day = @employee.work_days.exclude?(@date.strftime("%A"))
+
+    # 3. Normalize and sequence break times
     @break_start = normalize_time(@employee.break_start)
     @break_end   = normalize_time(@employee.break_end)
     
@@ -60,7 +64,7 @@ class TimeSlicerService
       b << ns if ns.between?(c_in, effective_out)
       b << ne if ne.between?(c_in, effective_out)
       
-      # Crucial: Split at Midnight to detect Holiday changes
+      # Split at Midnight to detect Holiday changes (Calendar-Basis)
       midnight = (d + 1.day).to_time.midnight
       b << midnight if midnight.between?(c_in, effective_out)
     end
@@ -78,14 +82,16 @@ class TimeSlicerService
   def build_slice(start_t, end_t, actual_in, qualifies_for_ot)
     duration = ((end_t - start_t) / 60).to_i
     
-    # Holiday Check (Fixed: Using holiday_type based on your error log)
+    # Holiday Check: Calendar-basis (changes at midnight)
     current_date = start_t.to_date
     holiday = Holiday.find_by(date: current_date)
     h_type  = holiday ? holiday.holiday_type.to_s.downcase : "none"
 
+    # Rest Day Check: Shift-basis (locked to the day the shift started)
+    is_rest = @is_shift_on_rest_day
+
     is_ot    = qualifies_for_ot && start_t >= @shift_end
     is_night = start_t.hour >= NIGHT_START_HOUR || start_t.hour < NIGHT_END_HOUR
-    is_rest  = @employee.work_days.exclude?(start_t.strftime("%A"))
     
     # Determine the code for PayMultiplier lookup
     multiplier_code = build_multiplier_code(h_type, is_rest, is_ot)
@@ -112,7 +118,7 @@ class TimeSlicerService
   def build_multiplier_code(h_type, rest, ot)
     code_parts = []
     
-    # 1. Map holiday strings to your specific codes
+    # 1. Map holiday strings
     case h_type
     when "regular" 
       code_parts << "RH"
