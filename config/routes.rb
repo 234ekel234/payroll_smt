@@ -1,5 +1,6 @@
 # config/routes.rb
 Rails.application.routes.draw do
+  resources :gov_deduction_brackets
   resources :deductions
   resources :pay_multipliers
   resources :payrolls

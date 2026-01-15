@@ -1,0 +1,10 @@
+<p style="color: green"><%= notice %></p>
+
+<%= render @gov_deduction_bracket %>
+
+<div>
+  <%= link_to "Edit this gov deduction bracket", edit_gov_deduction_bracket_path(@gov_deduction_bracket) %> |
+  <%= link_to "Back to gov deduction brackets", gov_deduction_brackets_path %>
+
+  <%= button_to "Destroy this gov deduction bracket", @gov_deduction_bracket, method: :delete %>
+</div>

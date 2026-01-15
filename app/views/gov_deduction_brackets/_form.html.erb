@@ -1,0 +1,37 @@
+<%= form_with(model: gov_deduction_bracket) do |form| %>
+  <% if gov_deduction_bracket.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(gov_deduction_bracket.errors.count, "error") %> prohibited this gov_deduction_bracket from being saved:</h2>
+
+      <ul>
+        <% gov_deduction_bracket.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= form.label :amount, style: "display: block" %>
+    <%= form.text_field :amount %>
+  </div>
+
+  <div>
+    <%= form.label :deduction_type, style: "display: block" %>
+    <%= form.number_field :deduction_type %>
+  </div>
+
+  <div>
+    <%= form.label :range_max, style: "display: block" %>
+    <%= form.text_field :range_max %>
+  </div>
+
+  <div>
+    <%= form.label :range_min, style: "display: block" %>
+    <%= form.text_field :range_min %>
+  </div>
+
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>
