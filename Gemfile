@@ -18,7 +18,7 @@ gem "stimulus-rails"
 gem "jbuilder"
 
 gem "dartsass-rails"
-gem "bootstrap", "~> 5.3.3"
+gem "bootstrap", "~> 5.3.8"
 gem 'roo'
 # gem 'faraday', '~> 2.7'
 gem 'google-apis-drive_v3', '~> 0.75.0'
