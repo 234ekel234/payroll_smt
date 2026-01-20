@@ -8,4 +8,7 @@ class TimeSlice < ApplicationRecord
   def multiplier
     (multiplier_percent.to_f / 100.0)
   end
+  def hours
+    (minutes.to_f / 60.0).round(2)
+  end
 end

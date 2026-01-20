@@ -4,6 +4,7 @@ class PayrollGenerator
     @end_date      = end_date
     @employees     = Array(employees)
     @deduction_ids = deduction_ids
+    # Ensure these flags are captured correctly
     @sss           = sss
     @ph            = ph
     @pi            = pi
@@ -12,9 +13,7 @@ class PayrollGenerator
   def generate!
     Payroll.transaction do
       @employees.each do |employee|
-        # 1. Clear existing 'draft' records for this period
-        # This ensures that if you change a Master Deduction name and re-run, 
-        # the new names show up on the payslip.
+        # Clear existing 'draft' records to allow re-generation
         Payroll.where(
           employee: employee, 
           start_date: @start_date, 
@@ -30,62 +29,47 @@ class PayrollGenerator
   private
 
   def process_employee(employee)
-    # Assume 8-hour workday for hourly rate calculation
+    # 1. Calculation Setup
     hourly_rate = employee.basic_rate.to_f / 8.0
-    
-    # 1. Gather Attendance Records
     period_dtrs = employee.daily_time_records.where(date: @start_date..@end_date)
     dtr_ids     = period_dtrs.pluck(:id)
     days_present = dtr_ids.count
-    
-    # Calculate total allowance based on days present
     total_allowance = (employee.allowance_per_day.to_f * days_present)
 
-    # 2. Fetch Time Slices (Granular minute segments)
+    # 2. Process Time Slices
     slices = TimeSlice.where(daily_time_record_id: dtr_ids)
-
-    totals = {
-      basic_pay: 0.0,
-      overtime_pay: 0.0,
-      holiday_pay: 0.0,
-      rest_day_pay: 0.0,
-      night_diff_pay: 0.0
-    }
+    totals = { basic_pay: 0.0, overtime_pay: 0.0, holiday_pay: 0.0, rest_day_pay: 0.0, night_diff_pay: 0.0 }
 
     slices.each do |slice|
       duration_mins = slice.minutes.to_f
       next if duration_mins <= 0
 
-      m_percent = slice.multiplier_percent.to_f > 0 ? slice.multiplier_percent.to_f : 100.0
-      multiplier = m_percent / 100.0
-      
-      # Base money calculation
+      multiplier = (slice.multiplier_percent.to_f > 0 ? slice.multiplier_percent.to_f : 100.0) / 100.0
       slice_money = (duration_mins / 60.0) * hourly_rate * multiplier
       
-      # Philippine Labor Law Logic
-      is_holiday = slice.holiday == true || slice.multiplier_code&.start_with?("RH", "SNWH")
-      is_rest    = slice.rest_day == true || slice.multiplier_code&.include?("RD")
+      # Determine category
+      is_holiday = slice.holiday || slice.multiplier_code&.start_with?("RH", "SNWH")
+      is_rest    = slice.rest_day || slice.multiplier_code&.include?("RD")
 
       if is_holiday
         totals[:holiday_pay] += slice_money
       elsif is_rest
         totals[:rest_day_pay] += slice_money
-      elsif slice.overtime == true
+      elsif slice.overtime
         totals[:overtime_pay] += slice_money
       else
         totals[:basic_pay] += slice_money
       end
 
-      if slice.night_diff == true
+      if slice.night_diff
         totals[:night_diff_pay] += (duration_mins / 60.0) * hourly_rate * 0.10
       end
     end
 
-    # 3. Summation
-    total_earnings = totals.values.sum
-    gross_pay = total_earnings + total_allowance
+    # 3. Final Gross Calculation
+    gross_pay = (totals.values.sum + total_allowance).round(2)
 
-    # 4. Persistence of the Main Record
+    # 4. Create Payroll Record
     payroll = Payroll.create!(
       employee: employee,
       start_date: @start_date,
@@ -98,15 +82,13 @@ class PayrollGenerator
       holiday_pay: totals[:holiday_pay],
       rest_day_pay: totals[:rest_day_pay],
       night_diff_pay: totals[:night_diff_pay],
-      gross_pay: gross_pay.round(2),
-      net_pay: gross_pay.round(2), 
+      gross_pay: gross_pay,
+      net_pay: gross_pay, # Will be updated after deductions
       status: "draft",
       processed_at: Time.current
     )
 
-    # 5. The Deduction "Clean" Call
-    # We pass the flags. The logic inside payroll.rb should handle 
-    # finding the Master Deduction and creating a snapshot with NO generic note.
+    # 5. Trigger Deductions with captured flags
     payroll.apply_all_deductions(
       standard_ids: @deduction_ids,
       sss: @sss,

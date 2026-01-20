@@ -1,3 +1,4 @@
+# app/models/payroll.rb
 class Payroll < ApplicationRecord
   belongs_to :employee
   has_many :payroll_deductions, dependent: :destroy
@@ -28,8 +29,11 @@ class Payroll < ApplicationRecord
   end
 
   def calculate_final_amounts!
+    # Reload ensures we are summing the newly created snapshots
     total = payroll_deductions.reload.sum(:amount)
+    
     # update_columns avoids infinite loops by skipping callbacks
+    # We use [..., 0].max to ensure net pay never goes negative
     update_columns(
       total_deductions: total,
       net_pay: [(gross_pay.to_f - total), 0].max.round(2)
@@ -46,8 +50,8 @@ class Payroll < ApplicationRecord
     Deduction.where(id: ids).each do |d|
       self.payroll_deductions.create!(
         deduction: d,
-        amount: d.calculate_for(self.gross_pay.to_f),
-        note: nil # View will default to Master Name
+        amount: d.amount.to_f, # Uses the amount defined in the Deduction master
+        note: "Standard Deduction"
       )
     end
   end
@@ -62,21 +66,22 @@ class Payroll < ApplicationRecord
       apply_pi:  pi
     )
 
-    # SEARCH LOGIC: We use ILIKE (Case-Insensitive) to find the master records
-    # This prevents the "missing deductions" error if names are slightly different
+    # 1. Match SSS
     if sss
       m = Deduction.where("name ILIKE ?", "%SSS%").first
-      self.payroll_deductions.create!(deduction: m, amount: results[:sss_ee], note: nil) if m
+      self.payroll_deductions.create!(deduction: m, amount: results[:sss_ee], note: "Statutory") if m
     end
 
+    # 2. Match PhilHealth (Matches "Phic", "PHIC", or "PhilHealth")
     if ph
-      m = Deduction.where("name ILIKE ?", "%PhilHealth%").first
-      self.payroll_deductions.create!(deduction: m, amount: results[:philhealth_ee], note: nil) if m
+      m = Deduction.where("name ILIKE ?", "%PHIC%").or(Deduction.where("name ILIKE ?", "%Phil%")).first
+      self.payroll_deductions.create!(deduction: m, amount: results[:philhealth_ee], note: "Statutory") if m
     end
 
+    # 3. Match Pag-IBIG (Matches "HDMF" or "Pag-IBIG")
     if pi
-      m = Deduction.where("name ILIKE ?", "%Pag-IBIG%").or(Deduction.where("name ILIKE ?", "%HDMF%")).first
-      self.payroll_deductions.create!(deduction: m, amount: results[:pagibig_ee], note: nil) if m
+      m = Deduction.where("name ILIKE ?", "%HDMF%").or(Deduction.where("name ILIKE ?", "%Pag-IBIG%")).first
+      self.payroll_deductions.create!(deduction: m, amount: results[:pagibig_ee], note: "Statutory") if m
     end
   end
 end

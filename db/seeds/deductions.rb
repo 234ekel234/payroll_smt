@@ -1,18 +1,20 @@
-# db/seeds.rb
-Deduction.find_or_create_by!(name: 'SSS') do |d|
-  d.category = 'Statutory'
-  d.active = true
-  d.notes = 'Social Security System Contribution'
-end
+# db/seeds/deductions.rb
+puts "Seeding Master Deduction Templates (UI Records)..."
+Deduction.where(category: 'Statutory').destroy_all
+Deduction.destroy_all
+statutory_templates = [
+  { name: 'SSS', notes: 'Social Security System' },
+  { name: 'PHIC', notes: 'PhilHealth Insurance' },
+  { name: 'HDMF', notes: 'Pag-IBIG Fund' }
+]
 
-Deduction.find_or_create_by!(name: 'PHIC') do |d|
-  d.category = 'Statutory'
-  d.active = true
-  d.notes = 'PhilHealth Insurance'
-end
-
-Deduction.find_or_create_by!(name: 'HDMF') do |d|
-  d.category = 'Statutory'
-  d.active = true
-  d.notes = 'Pag-IBIG Fund'
+statutory_templates.each do |item|
+  Deduction.create!(
+    name: item[:name],
+    category: 'Statutory',
+    active: true,
+    notes: item[:notes],
+    amount: 0.0,
+    amount_type: 'fixed'
+  )
 end
