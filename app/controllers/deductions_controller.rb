@@ -1,71 +1,73 @@
 class DeductionsController < ApplicationController
-  before_action :set_deduction, only: %i[ show edit update destroy ]
+  before_action :set_deduction, only: %i[ show edit update destroy toggle_status ]
 
-  # GET /deductions or /deductions.json
+  # GET /deductions
   def index
-    @deductions = Deduction.all
+    # We order by active status so current ones stay at the top
+    @deductions = Deduction.order(active: :desc, name: :asc)
   end
 
-  # GET /deductions/1 or /deductions/1.json
+  # GET /deductions/1
   def show
   end
 
   # GET /deductions/new
   def new
-    @deduction = Deduction.new
+    @deduction = Deduction.new(active: true) # Default to active for new records
   end
 
   # GET /deductions/1/edit
   def edit
   end
 
-  # POST /deductions or /deductions.json
+  # POST /deductions
   def create
     @deduction = Deduction.new(deduction_params)
 
-    respond_to do |format|
-      if @deduction.save
-        format.html { redirect_to @deduction, notice: "Deduction was successfully created." }
-        format.json { render :show, status: :created, location: @deduction }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @deduction.errors, status: :unprocessable_entity }
-      end
+    if @deduction.save
+      redirect_to deductions_path, notice: "Deduction '#{@deduction.name}' was successfully created."
+    else
+      render :new, status: :unprocessable_entity
     end
   end
 
-  # PATCH/PUT /deductions/1 or /deductions/1.json
+  # PATCH/PUT /deductions/1
   def update
-    respond_to do |format|
-      if @deduction.update(deduction_params)
-        format.html { redirect_to @deduction, notice: "Deduction was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @deduction }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @deduction.errors, status: :unprocessable_entity }
-      end
+    if @deduction.update(deduction_params)
+      redirect_to deductions_path, notice: "Deduction was successfully updated."
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
-  # DELETE /deductions/1 or /deductions/1.json
+  # DELETE /deductions/1
+  # This replaces hard-delete with deactivation to protect foreign key integrity
   def destroy
-    @deduction.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to deductions_path, notice: "Deduction was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
+    if @deduction.update(active: false)
+      redirect_to deductions_path, notice: "Deduction was archived. It won't affect new payrolls but remains in history."
+    else
+      redirect_to deductions_path, alert: "Could not deactivate deduction."
     end
+  end
+
+  # PATCH /deductions/1/toggle_status
+  # Custom action to allow easy Re-activation from the index view
+  def toggle_status
+    new_status = !@deduction.active
+    @deduction.update(active: new_status)
+    
+    message = new_status ? "Deduction is now Active." : "Deduction has been Archived."
+    redirect_to deductions_path, notice: message
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_deduction
-      @deduction = Deduction.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def deduction_params
-    # You must list every field you want to be able to save from the form
+  def set_deduction
+    # Rails 8 'expect' style but safe for standard IDs
+    @deduction = Deduction.find(params[:id])
+  end
+
+  def deduction_params
     params.require(:deduction).permit(
       :name, 
       :amount, 

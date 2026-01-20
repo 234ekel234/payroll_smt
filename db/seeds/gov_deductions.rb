@@ -27,4 +27,19 @@ GovDeductionBracket.create!(deduction_type: :philhealth, range_min: 100000, rang
 GovDeductionBracket.create!(deduction_type: :pagibig, range_min: 0, range_max: 1500, amount: 15.00)
 GovDeductionBracket.create!(deduction_type: :pagibig, range_min: 1500.01, range_max: 999999, amount: 200.00)
 
+statutory_items = [
+  { name: "SSS Statutory", category: "Government", notes: "Auto-calculated based on 2026 SSS Brackets" },
+  { name: "PhilHealth Statutory", category: "Government", notes: "Auto-calculated (2.5% Employee Share)" },
+  { name: "Pag-IBIG Statutory", category: "Government", notes: "Auto-calculated (Fixed cap at ₱200)" }
+]
+
+statutory_items.each do |item|
+  Deduction.find_or_create_by!(name: item[:name]) do |d|
+    d.category = item[:category]
+    d.notes = item[:notes]
+    d.active = true
+    d.amount = 0
+    d.amount_type = :fixed # We save the snapshot as a fixed peso amount
+  end
+end
 puts "Government Brackets Seeded Successfully!"

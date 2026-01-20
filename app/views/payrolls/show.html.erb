@@ -1,164 +1,169 @@
 <div class="container mt-5 mb-5">
-  <div class="d-print-none mb-4">
+  <div class="d-print-none d-flex justify-content-between mb-4">
     <%= link_to payrolls_path, class: "btn btn-secondary shadow-sm" do %>
-      <i class="bi bi-arrow-left"></i> Back
+      <i class="bi bi-arrow-left"></i> Back to Payrolls
     <% end %>
+    <button onclick="window.print();" class="btn btn-primary shadow-sm">
+      <i class="bi bi-printer"></i> Print Payslip
+    </button>
   </div>
 
   <div class="card shadow-sm border-0 mx-auto" style="max-width: 850px;">
     <div class="card-body p-5">
+      <%# --- HEADER --- %>
       <div class="row mb-4">
         <div class="col-6">
           <h2 class="fw-bold mb-0 text-primary">PAYSLIP</h2>
-          <p class="text-muted">Payroll ID: #<%= @payroll.id %> | Period: <%= @payroll.start_date.strftime("%b %d") %> - <%= @payroll.end_date.strftime("%b %d, %Y") %></p>
+          <p class="text-muted mb-0 small">Payroll ID: #<%= @payroll.id %></p>
+          <p class="text-muted small">Period: <%= @payroll.start_date&.strftime("%b %d") %> - <%= @payroll.end_date&.strftime("%b %d, %Y") %></p>
         </div>
         <div class="col-6 text-end">
           <h5 class="fw-bold mb-0 text-uppercase"><%= @payroll.employee.name %></h5>
-          <p class="text-muted small mb-1">ID: <%= @payroll.employee.person_id %></p>
+          <p class="text-muted small mb-1">Employee ID: <%= @payroll.employee.person_id %></p>
           <span class="badge <%= @payroll.status == 'processed' ? 'bg-success' : 'bg-warning text-dark' %>">
             <%= (@payroll.status || 'DRAFT').upcase %>
           </span>
         </div>
       </div>
 
-      <%# --- Time Bucket Logic --- %>
-      <% dtr_ids = @payroll.daily_time_records.pluck(:id) %>
-      <% slices = TimeSlice.where(daily_time_record_id: dtr_ids) %>
-      
-      <%# 1. Holiday Mins (Includes Holiday OT) %>
-      <% h_mins  = slices.where(holiday: true).sum(:minutes) %>
-      
-      <%# 2. Rest Day Mins (Excluding Holidays) %>
-      <% rd_mins = slices.where(rest_day: true, holiday: false).sum(:minutes) %>
-      
-      <%# 3. Overtime Mins (Excluding Holidays and Rest Days) %>
-      <% ot_mins = slices.where(overtime: true, holiday: false, rest_day: false).sum(:minutes) %>
-      
-      <%# 4. Regular Mins (The remainder: inside shift, normal day) %>
-      <% reg_mins = slices.where(overtime: false, holiday: false, rest_day: false).sum(:minutes) %>
-      
-      <%# 5. Night Diff (The overlap premium) %>
-      <% nd_mins = slices.where(night_diff: true).sum(:minutes) %>
+      <%# --- TIME DATA CALCULATIONS --- %>
+      <% 
+        dtr_ids = @payroll.daily_time_records.pluck(:id)
+        slices  = TimeSlice.where(daily_time_record_id: dtr_ids)
+        
+        # Breakdown of minutes
+        h_mins   = slices.where(holiday: true).sum(:minutes)
+        rd_mins  = slices.where(rest_day: true, holiday: false).sum(:minutes)
+        ot_mins  = slices.where(overtime: true, holiday: false, rest_day: false).sum(:minutes)
+        reg_mins = slices.where(overtime: false, holiday: false, rest_day: false).sum(:minutes)
+        nd_mins  = slices.where(night_diff: true).sum(:minutes)
+        
+        total_clocked_mins = @payroll.daily_time_records.sum { |d| d.clock_out && d.clock_in ? ((d.clock_out - d.clock_in) / 60).to_i : 0 }
+      %>
 
-      <%# Total actual minutes from clock-in to clock-out %>
-      <% total_clocked_mins = @payroll.daily_time_records.sum { |d| ((d.clock_out - d.clock_in) / 60).to_i } %>
-
-      <div class="row bg-light rounded p-3 mb-4 g-2 border mx-0 align-items-center">
-        <div class="col-md-3">
-          <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Gross Clocked Time</small>
+      <div class="row bg-light rounded p-3 mb-4 g-2 border mx-0 align-items-center text-center">
+        <div class="col-md-3 text-start">
+          <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Gross Presence</small>
           <h5 class="mb-0 fw-bold"><%= total_clocked_mins / 60 %>h <%= total_clocked_mins % 60 %>m</h5>
-          <small class="text-muted" style="font-size: 0.65rem;">Total Facility Presence</small>
         </div>
-
-        <div class="col border-start ps-3">
+        <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Regular</small>
           <h5 class="mb-0 fw-bold"><%= reg_mins / 60 %>h <%= reg_mins % 60 %>m</h5>
-          <small class="text-muted" style="font-size: 0.65rem;">Inside Shift</small>
         </div>
-
-        <div class="col border-start ps-3">
-          <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Holiday/Rest</small>
-          <h5 class="mb-0 fw-bold <%= 'text-danger' if (h_mins + rd_mins) > 0 %>">
-            <%= (h_mins + rd_mins) / 60 %>h <%= (h_mins + rd_mins) % 60 %>m
-          </h5>
-          <small class="text-muted" style="font-size: 0.65rem;">Premium Days</small>
+        <div class="col border-start">
+          <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Holiday/RD</small>
+          <h5 class="mb-0 fw-bold"><%= (h_mins + rd_mins) / 60 %>h <%= (h_mins + rd_mins) % 60 %>m</h5>
         </div>
-
-        <div class="col border-start ps-3">
+        <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Overtime</small>
-          <h5 class="mb-0 fw-bold <%= 'text-primary' if ot_mins > 0 %>">
-            <%= ot_mins / 60 %>h <%= ot_mins % 60 %>m
-          </h5>
-          <small class="text-muted" style="font-size: 0.65rem;">Outside Shift</small>
+          <h5 class="mb-0 fw-bold"><%= ot_mins / 60 %>h <%= ot_mins % 60 %>m</h5>
         </div>
-
-        <div class="col border-start ps-3">
+        <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Night Diff</small>
-          <h5 class="mb-0 fw-bold <%= 'text-info' if nd_mins > 0 %>">
-            <%= nd_mins / 60 %>h <%= nd_mins % 60 %>m
-          </h5>
-          <small class="text-muted" style="font-size: 0.65rem;">10PM - 6AM</small>
+          <h5 class="mb-0 fw-bold"><%= nd_mins / 60 %>h <%= nd_mins % 60 %>m</h5>
         </div>
       </div>
 
       <div class="row g-5">
+        <%# --- EARNINGS COLUMN --- %>
         <div class="col-md-6 border-end">
-          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Earnings</h6>
+          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Earnings Breakdown</h6>
           
           <div class="d-flex justify-content-between mb-2">
             <div>
               <span class="d-block">Basic Pay</span>
-              <small class="text-muted"><%= reg_mins / 60 %>h <%= reg_mins % 60 %>m at 100%</small>
+              <small class="text-muted">Rate: <%= number_to_currency(@payroll.daily_rate, unit: "₱") %></small>
             </div>
             <span class="fw-semibold"><%= number_to_currency(@payroll.basic_pay || 0, unit: "₱") %></span>
           </div>
 
           <% if @payroll.holiday_pay.to_f > 0 %>
             <div class="d-flex justify-content-between mb-2 text-danger">
-              <div>
-                <span class="d-block fw-bold">Holiday Pay</span>
-                <small class="opacity-75"><%= h_mins / 60 %>h <%= h_mins % 60 %>m Premium</small>
-              </div>
+              <span>Holiday Pay Premium</span>
               <span class="fw-bold">+ <%= number_to_currency(@payroll.holiday_pay, unit: "₱") %></span>
+            </div>
+          <% end %>
+
+          <% if @payroll.rest_day_pay.to_f > 0 %>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Rest Day Pay</span>
+              <span class="fw-bold">+ <%= number_to_currency(@payroll.rest_day_pay, unit: "₱") %></span>
             </div>
           <% end %>
 
           <% if @payroll.overtime_pay.to_f > 0 %>
             <div class="d-flex justify-content-between mb-2 text-primary">
-              <div>
-                <span class="d-block">Overtime Pay</span>
-                <small class="opacity-75"><%= ot_mins / 60 %>h <%= ot_mins % 60 %>m at 125%</small>
-              </div>
+              <span>Overtime Pay</span>
               <span>+ <%= number_to_currency(@payroll.overtime_pay, unit: "₱") %></span>
             </div>
           <% end %>
 
           <% if @payroll.night_diff_pay.to_f > 0 %>
             <div class="d-flex justify-content-between mb-2 text-info">
-              <div>
-                <span class="d-block">Night Diff Pay</span>
-                <small class="opacity-75"><%= nd_mins / 60 %>h <%= nd_mins % 60 %>m at 10%</small>
-              </div>
+              <span>Night Differential</span>
               <span>+ <%= number_to_currency(@payroll.night_diff_pay, unit: "₱") %></span>
             </div>
           <% end %>
 
           <% if @payroll.allowance.to_f > 0 %>
-            <div class="d-flex justify-content-between mb-1 text-success small">
-              <span>Allowances (<%= @payroll.days_worked %> days)</span>
+            <div class="d-flex justify-content-between mb-1 text-success">
+              <span>Allowances</span>
               <span>+ <%= number_to_currency(@payroll.allowance, unit: "₱") %></span>
             </div>
           <% end %>
 
           <div class="d-flex justify-content-between fw-bold pt-2 border-top mt-3 bg-light p-2 rounded">
-            <span>GROSS PAY</span>
+            <span>GROSS EARNINGS</span>
             <span><%= number_to_currency(@payroll.gross_pay || 0, unit: "₱") %></span>
           </div>
         </div>
 
+        <%# --- DEDUCTIONS COLUMN --- %>
         <div class="col-md-6">
-          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Deductions</h6>
+          <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Deductions Breakdown</h6>
           <% if @payroll.payroll_deductions.any? %>
             <% @payroll.payroll_deductions.each do |pd| %>
-              <div class="d-flex justify-content-between mb-1">
-                <span class="small text-truncate" style="max-width: 150px;"><%= pd.note %></span>
-                <span class="text-danger small">- <%= number_to_currency(pd.amount || 0, unit: "₱") %></span>
+              <div class="d-flex justify-content-between mb-2">
+                <div>
+                  <%# Pulling the name from the Master Record (Deduction table) %>
+                  <span class="d-block small fw-bold text-dark"><%= pd.deduction&.name || "Deduction" %></span>
+                  
+                  <%# Only show note if it's not the same as the name %>
+                  <% if pd.note.present? && pd.note != pd.deduction&.name %>
+                    <small class="text-muted d-block" style="font-size: 0.7rem;"><%= pd.note %></small>
+                  <% end %>
+                </div>
+                <span class="text-danger small fw-semibold">- <%= number_to_currency(pd.amount || 0, unit: "₱") %></span>
               </div>
             <% end %>
           <% else %>
-            <div class="text-muted small italic py-2 text-center">No deductions applied.</div>
+            <div class="text-muted small italic py-2 text-center">No deductions applied for this period.</div>
           <% end %>
 
-          <div class="d-flex justify-content-between fw-bold pt-2 border-top mt-3 text-danger">
+          <div class="d-flex justify-content-between fw-bold pt-2 border-top mt-3 text-danger p-2">
             <span>TOTAL DEDUCTIONS</span>
             <span>- <%= number_to_currency(@payroll.total_deductions || 0, unit: "₱") %></span>
           </div>
         </div>
       </div>
 
+      <%# --- NET PAY FOOTER --- %>
       <div class="mt-5 p-4 bg-dark text-white rounded text-center shadow-lg">
         <h6 class="text-uppercase small mb-1 opacity-75">Net Take Home Pay</h6>
-        <h1 class="display-5 fw-bold mb-0"><%= number_to_currency(@payroll.net_pay || 0, unit: "₱") %></h1>
+        <h1 class="display-4 fw-bold mb-0"><%= number_to_currency(@payroll.net_pay || 0, unit: "₱") %></h1>
+        <small class="opacity-50">Generated on: <%= Time.current.strftime("%m/%d/%Y %I:%M %p") %></small>
+      </div>
+      
+      <%# --- SIGNATURE SECTION --- %>
+      <div class="row mt-5 pt-4 border-top">
+        <div class="col-6">
+          <div class="border-bottom border-dark w-75 mb-1"></div>
+          <small class="text-muted">Employee Signature</small>
+        </div>
+        <div class="col-6 text-end">
+          <div class="border-bottom border-dark w-75 ms-auto mb-1"></div>
+          <small class="text-muted">Authorized By</small>
+        </div>
       </div>
     </div>
   </div>

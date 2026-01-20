@@ -1,6 +1,6 @@
 class GovDeductionBracket < ApplicationRecord
   # Fix: Added a colon before deduction_type and a comma after
-  enum :deduction_type, { sss: 0, philhealth: 1, pagibig: 2, tax: 3 }
+  enum :deduction_type, { sss: 0, philhealth: 1, pagibig: 2}
 
   def self.calculate_amount(name, gross_pay)
     type_key = name.downcase.to_sym

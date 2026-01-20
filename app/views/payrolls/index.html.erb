@@ -1,125 +1,156 @@
 <div class="container-fluid mt-4">
+  <%# HEADER SECTION %>
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1><i class="bi bi-wallet2"></i> Payroll Records</h1>
-    <%= link_to new_payroll_path, class: "btn btn-outline-primary shadow-sm" do %>
-      <i class="bi bi-plus-lg"></i> Add Manual Adjustment
+    <div>
+      <h1 class="h2 mb-1"><i class="bi bi-wallet2 text-primary"></i> Payroll Records</h1>
+      <p class="text-muted mb-0">Batch generate payroll or manage individual audit-ready snapshots.</p>
+    </div>
+    <%= link_to deductions_path, class: "btn btn-outline-secondary shadow-sm" do %>
+      <i class="bi bi-gear-wide-connected"></i> Configure Master Deductions
     <% end %>
   </div>
 
-  <% # UPDATED BATCH GENERATOR SECTION %>
-  <div class="card mb-4 border-success shadow-sm">
-    <div class="card-header bg-success text-white">
-      <h5 class="card-title mb-0"><i class="bi bi-gear-fill"></i> Step 1: Batch Generate Payroll</h5>
+  <%# BATCH GENERATOR CARD %>
+  <div class="card mb-4 border-primary shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0"><i class="bi bi-gear-fill me-2"></i>Batch Payroll Generator</h5>
+      <span class="badge bg-white text-primary">2026 Statutory Ready</span>
     </div>
     <div class="card-body bg-light">
       <%= form_with url: generate_payrolls_path, method: :post do |f| %>
         <div class="row g-3">
-          <%# Date Selectors %>
-          <div class="col-md-3">
-            <%= f.label :start_date, "Cut-off Start", class: "form-label fw-bold" %>
-            <%= f.date_field :start_date, value: Date.today.beginning_of_month, class: "form-control border-success" %>
+          <%# 1. Date Selectors %>
+          <div class="col-md-2">
+            <%= f.label :start_date, "Cut-off Start", class: "form-label fw-bold small text-uppercase" %>
+            <%= f.date_field :start_date, value: Date.today.beginning_of_month, class: "form-control" %>
           </div>
-          <div class="col-md-3">
-            <%= f.label :end_date, "Cut-off End", class: "form-label fw-bold" %>
-            <%= f.date_field :end_date, value: Date.today.end_of_month, class: "form-control border-success" %>
+          <div class="col-md-2">
+            <%= f.label :end_date, "Cut-off End", class: "form-label fw-bold small text-uppercase" %>
+            <%= f.date_field :end_date, value: Date.today.end_of_month, class: "form-control" %>
           </div>
 
-          <%# Deduction Selection Checklist %>
-          <div class="col-md-6">
-            <label class="form-label fw-bold"><i class="bi bi-check2-square text-success"></i> Include Statutory Deductions:</label>
-            <div class="p-2 border rounded bg-white shadow-sm d-flex flex-wrap gap-3">
-              <%= f.collection_check_boxes :deduction_ids, Deduction.where(active: true), :id, :name do |b| %>
-                <div class="form-check">
-                  <%# Default to checked if it's a government/statutory deduction %>
-                  <%= b.check_box(class: "form-check-input", checked: b.object.category == "Government") %>
-                  <%= b.label(class: "form-check-label small fw-semibold") %>
+          <%# 2. Statutory Toggles (Auto-Math) %>
+          <div class="col-md-4 border-start border-end px-4">
+            <label class="form-label fw-bold small text-uppercase text-primary"><i class="bi bi-bank"></i> Statutory Contributions</label>
+            <div class="d-flex flex-wrap gap-3 mt-1">
+              <div class="form-check form-switch">
+                <%= f.check_box :apply_sss, { class: "form-check-input", checked: true }, "1", "0" %>
+                <%= f.label :apply_sss, "SSS", class: "form-check-label fw-bold" %>
+              </div>
+              <div class="form-check form-switch">
+                <%= f.check_box :apply_ph, { class: "form-check-input", checked: true }, "1", "0" %>
+                <%= f.label :apply_ph, "PhilHealth", class: "form-check-label fw-bold" %>
+              </div>
+              <div class="form-check form-switch">
+                <%= f.check_box :apply_pi, { class: "form-check-input", checked: true }, "1", "0" %>
+                <%= f.label :apply_pi, "Pag-IBIG", class: "form-check-label fw-bold" %>
+              </div>
+            </div>
+            <small class="text-muted d-block mt-1">Calculates based on 2026 Gov. Brackets.</small>
+          </div>
+
+          <%# 3. Master Deductions Checklist %>
+          <div class="col-md-4">
+            <label class="form-label fw-bold small text-uppercase text-secondary">Company Deductions</label>
+            <div class="p-2 border rounded bg-white overflow-auto" style="max-height: 85px;">
+              <%= f.collection_check_boxes :deduction_ids, Deduction.where(active: true).where.not(category: "Government"), :id, :name do |b| %>
+                <div class="form-check form-check-inline">
+                  <%= b.check_box(class: "form-check-input") %>
+                  <%= b.label(class: "form-check-label small") %>
                 </div>
               <% end %>
             </div>
-            <small class="text-muted italic">Uncheck items you don't want to calculate for this batch.</small>
           </div>
 
-          <div class="col-12 mt-3">
-            <button type="submit" class="btn btn-success px-4 py-2 shadow-sm" data-confirm="Generate payrolls for all employees with selected deductions?">
-              <i class="bi bi-calculator"></i> Calculate All Employees
-            </button>
+          <div class="col-12 mt-3 text-end">
+            <%= f.button type: :submit, class: "btn btn-primary px-5 shadow-sm", data: { turbo_confirm: "This will regenerate all 'Draft' payrolls for the selected dates. Existing snapshots will be replaced. Proceed?" } do %>
+              <i class="bi bi-calculator me-2"></i>Run Batch Generation
+            <% end %>
           </div>
         </div>
       <% end %>
     </div>
   </div>
 
-  <% # PAYROLL TABLE SECTION %>
-  <div class="table-responsive shadow-sm rounded">
-    <table class="table table-hover table-bordered align-middle bg-white mb-0">
-      <thead class="table-dark text-nowrap">
-        <tr>
-          <th class="text-center">#</th>
-          <th>Employee</th>
-          <th>Period</th>
-          <th class="text-end">Gross Pay</th>
-          <th class="text-end text-warning">Deductions</th>
-          <th class="text-end bg-primary text-white">Net Pay</th>
-          <th class="text-center">Status</th>
-          <th class="text-center">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% if @payrolls.any? %>
-          <% @payrolls.each_with_index do |payroll, idx| %>
-            <tr class="<%= 'table-warning' if payroll.status == 'draft' %>">
-              <td class="text-center text-muted"><%= idx + 1 %></td>
-              <td>
-                <div class="fw-bold text-dark"><%= payroll.employee.name %></div>
-                <small class="text-muted"><%= payroll.employee.person_id %></small>
-              </td>
-              <td>
-                <span class="badge bg-light text-dark border">
-                  <%= payroll.start_date&.strftime("%b %d") %> - <%= payroll.end_date&.strftime("%b %d") %>
-                </span>
-              </td>
-              
-              <td class="text-end fw-bold"><%= number_to_currency(payroll.gross_pay || 0, unit: "₱") %></td>
-              <td class="text-end text-danger">
-                <%= number_to_currency(payroll.total_deductions || 0, unit: "₱") %>
-                <div class="small text-muted" style="font-size: 0.75rem;">
-                  <%= pluralize(payroll.payroll_deductions.count, 'item') %>
-                </div>
-              </td>
-              <td class="text-end fw-bold bg-light text-success">
-                <%= number_to_currency(payroll.net_pay || 0, unit: "₱") %>
-              </td>
+  <%# PAYROLL TABLE SECTION %>
+  <div class="card shadow-sm border-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-nowrap">
+          <tr>
+            <th class="ps-3">Employee</th>
+            <th>Period</th>
+            <th class="text-end">Gross Pay</th>
+            <th class="text-end text-danger">Deductions</th>
+            <th class="text-end fw-bold">Net Pay</th>
+            <th class="text-center">Status</th>
+            <th class="text-end pe-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @payrolls.any? %>
+            <% @payrolls.each do |payroll| %>
+              <tr class="<%= 'opacity-75 bg-light' if payroll.status == 'draft' %>">
+                <td class="ps-3">
+                  <div class="fw-bold"><%= payroll.employee.name %></div>
+                  <small class="text-muted text-uppercase" style="font-size: 0.75rem;">ID: <%= payroll.employee.person_id %></small>
+                </td>
+                <td>
+                  <span class="small text-nowrap">
+                    <%= payroll.start_date&.strftime("%b %d") %> - <%= payroll.end_date&.strftime("%b %d") %>
+                  </span>
+                </td>
+                <td class="text-end fw-semibold"><%= number_to_currency(payroll.gross_pay || 0, unit: "₱") %></td>
+                
+                <%# Deduction Tooltip Snapshot %>
+                <td class="text-end text-danger">
+                  <% deduction_details = payroll.payroll_deductions.map { |pd| "#{pd.deduction&.name}: ₱#{number_with_precision(pd.amount, precision: 2)}" }.join("\n") %>
+                  <span title="<%= deduction_details %>" style="cursor: help; border-bottom: 1px dashed #dc3545;" data-bs-toggle="tooltip" data-bs-placement="top">
+                    -<%= number_to_currency(payroll.total_deductions || 0, unit: "₱") %>
+                  </span>
+                </td>
+                
+                <td class="text-end fw-bold text-success"><%= number_to_currency(payroll.net_pay || 0, unit: "₱") %></td>
+                
+                <td class="text-center">
+                  <% if payroll.status == 'processed' %>
+                    <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3">PAID</span>
+                  <% else %>
+                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning px-3">DRAFT</span>
+                  <% end %>
+                </td>
+                
+                <%# CLEAR, LABELED ACTION BUTTONS %>
+                <td class="text-end pe-3">
+                  <div class="d-flex justify-content-end gap-2">
+                    <%= link_to payroll_path(payroll), class: "btn btn-sm btn-info text-white d-inline-flex align-items-center px-2 shadow-sm" do %>
+                      <i class="bi bi-eye-fill me-1"></i> View
+                    <% end %>
 
-              <td class="text-center">
-                <% status_class = payroll.status == 'processed' ? 'bg-success' : 'bg-secondary' %>
-                <span class="badge <%= status_class %>">
-                  <%= (payroll.status || 'DRAFT').upcase %>
-                </span>
-              </td>
-              <td>
-                <div class="d-flex justify-content-center gap-1 text-nowrap">
-                  <%= link_to payroll_path(payroll), class: "btn btn-sm btn-outline-info", title: "View Payslip" do %>
-                    <i class="bi bi-printer"></i>
-                  <% end %>
-                  <%= link_to edit_payroll_path(payroll), class: "btn btn-sm btn-outline-warning", title: "Adjust Deductions" do %>
-                    <i class="bi bi-pencil-square"></i>
-                  <% end %>
-                  <%= button_to payroll_path(payroll), method: :delete, class: "btn btn-sm btn-outline-danger", data: { confirm: "Permanently delete this record?" } do %>
-                    <i class="bi bi-trash"></i>
-                  <% end %>
-                </div>
+                    <%= link_to edit_payroll_path(payroll), class: "btn btn-sm btn-warning text-dark d-inline-flex align-items-center px-2 shadow-sm" do %>
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
+                    <% end %>
+
+                    <%= button_to payroll_path(payroll), 
+                        method: :delete, 
+                        class: "btn btn-sm btn-danger d-inline-flex align-items-center px-2 shadow-sm", 
+                        form: { data: { turbo_confirm: "Permanently delete the payroll record for #{payroll.employee.name}?\n\nThis cannot be undone." } } do %>
+                      <i class="bi bi-trash-fill me-1"></i> Delete
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted italic">
+                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                No payroll records found. Adjust dates and click "Run Batch Generation" to start.
               </td>
             </tr>
           <% end %>
-        <% else %>
-          <tr>
-            <td colspan="8" class="text-center py-5 text-muted">
-              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-              No payroll records found. Click "Calculate All" above to generate drafts.
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>

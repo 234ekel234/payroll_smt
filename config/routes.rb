@@ -1,14 +1,12 @@
 # config/routes.rb
 Rails.application.routes.draw do
-  resources :gov_deduction_brackets
-  resources :deductions
   resources :pay_multipliers
   resources :payrolls
   resources :holidays
   root "employees#index"
-
+  resources :gov_deduction_brackets
   resources :employees
-
+  get 'attendance_report', to: 'reports#attendance'
   resources :daily_time_records do
     collection do
       post :import_file   # /daily_time_records/import_file
@@ -22,6 +20,12 @@ Rails.application.routes.draw do
       post :generate
     end
   end
+  resources :deductions do
+    member do
+      patch :toggle_status
+    end
+  end
+
 
   # Example of other resources if needed
   # resources :payrolls
