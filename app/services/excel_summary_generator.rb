@@ -251,11 +251,11 @@ class ExcelSummaryGenerator
         ot_hr:             times[:ot_hr],
         ot_min:            times[:ot_min],
         ot_total_time:     times[:ot_total],
-        ot_pay:            payroll.overtime_pay.to_f,
+        ot_pay:            pays[:ot],
 
         # Rest Day
         rd_hr:             times[:rd_hr],
-        rd_pay:            payroll.rest_day_pay.to_f,
+        rd_pay:            pays[:rd],
 
         # OT Rest Day
         ot_rd_hr:          times[:ot_rd_hr],
@@ -283,7 +283,7 @@ class ExcelSummaryGenerator
         rh_not_worked_hr:  times[:rh_not_worked_hr],
         rh_not_worked_pay: pays[:rh_not_worked],
         rh_hr:             times[:rh_hr],
-        rh_pay:            payroll.holiday_pay.to_f,
+        rh_pay:            pays[:rh],
         ot_rh_hr:          times[:ot_rh_hr],
         ot_rh_min:         times[:ot_rh_min],
         ot_rh_total:       times[:ot_rh_total],
@@ -299,7 +299,7 @@ class ExcelSummaryGenerator
         nd_ord_hr:         times[:nd_ord_hr],
         nd_ord_min:        times[:nd_ord_min],
         nd_ord_total:      times[:nd_ord_total],
-        nd_ord_pay:        payroll.night_diff_pay.to_f,
+        nd_ord_pay:        pays[:nd_ord],
 
         # ND OT
         nd_ot_hr:          times[:nd_ot_hr],
@@ -502,52 +502,8 @@ class ExcelSummaryGenerator
   end
 
   def compute_times(slices)
-    buckets    = Hash.new(0)
-    snwh_codes = %w[SNWH SNWH_RD OT_SNWH OT_SNWH_RD]
-    rh_codes   = %w[RH RH_RD OT_RH OT_RH_RD RH_NW]
-
-    slices.each do |s|
-      code  = s.multiplier_code.to_s.upcase
-      nd    = s.night_diff?
-      ot    = s.overtime?
-      rd    = s.rest_day?
-      snwh  = snwh_codes.any? { |c| code.include?(c) }
-      rh    = rh_codes.any?   { |c| code.include?(c) }
-      rh_nw = code == "RH_NW"
-
-      key = if nd
-        if    ot && rh && rd   then :nd_ot_rh_rd
-        elsif ot && rh         then :nd_ot_rh
-        elsif ot && snwh && rd then :nd_ot_snwh_rd
-        elsif ot && snwh       then :nd_ot_snwh
-        elsif ot && rd         then :nd_ot_rd
-        elsif ot               then :nd_ot
-        elsif rh && rd         then :nd_rh_rd
-        elsif rh               then :nd_rh
-        elsif snwh && rd       then :nd_snwh_rd
-        elsif snwh             then :nd_snwh
-        elsif rd               then :nd_rd
-        else                        :nd_ord
-        end
-      elsif ot
-        if    rh && rd   then :ot_rh_rd
-        elsif rh         then :ot_rh
-        elsif snwh && rd then :ot_snwh_rd
-        elsif snwh       then :ot_snwh
-        elsif rd         then :ot_rd
-        else                  :ot
-        end
-      elsif rh_nw        then :rh_not_worked
-      elsif rh && rd     then :rh_rd
-      elsif rh           then :rh
-      elsif snwh && rd   then :snwh_rd
-      elsif snwh         then :snwh
-      elsif rd           then :rd
-      else                    :reg
-      end
-
-      buckets[key] += s.minutes.to_i
-    end
+    buckets = Hash.new(0)
+    slices.each { |s| buckets[slice_bucket_key(s)] += s.minutes.to_i }
 
     keys = %i[ot rd ot_rd snwh ot_snwh snwh_rd ot_snwh_rd rh rh_rd ot_rh ot_rh_rd
               nd_ord nd_ot nd_rd nd_ot_rd nd_snwh nd_ot_snwh nd_snwh_rd nd_ot_snwh_rd
@@ -568,54 +524,53 @@ class ExcelSummaryGenerator
   # Pay aggregation — sums slice.pay per bucket
   # ---------------------------------------------------------------------------
   def compute_pays(slices)
-    buckets    = Hash.new(0.0)
-    snwh_codes = %w[SNWH SNWH_RD OT_SNWH OT_SNWH_RD]
-    rh_codes   = %w[RH RH_RD OT_RH OT_RH_RD RH_NW]
-
-    slices.each do |s|
-      code  = s.multiplier_code.to_s.upcase
-      nd    = s.night_diff?
-      ot    = s.overtime?
-      rd    = s.rest_day?
-      snwh  = snwh_codes.any? { |c| code.include?(c) }
-      rh    = rh_codes.any?   { |c| code.include?(c) }
-      rh_nw = code == "RH_NW"
-
-      key = if nd
-        if    ot && rh && rd   then :nd_ot_rh_rd
-        elsif ot && rh         then :nd_ot_rh
-        elsif ot && snwh && rd then :nd_ot_snwh_rd
-        elsif ot && snwh       then :nd_ot_snwh
-        elsif ot && rd         then :nd_ot_rd
-        elsif ot               then :nd_ot
-        elsif rh && rd         then :nd_rh_rd
-        elsif rh               then :nd_rh
-        elsif snwh && rd       then :nd_snwh_rd
-        elsif snwh             then :nd_snwh
-        elsif rd               then :nd_rd
-        else                        :nd_ord
-        end
-      elsif ot
-        if    rh && rd   then :ot_rh_rd
-        elsif rh         then :ot_rh
-        elsif snwh && rd then :ot_snwh_rd
-        elsif snwh       then :ot_snwh
-        elsif rd         then :ot_rd
-        else                  :ot
-        end
-      elsif rh_nw        then :rh_not_worked
-      elsif rh && rd     then :rh_rd
-      elsif rh           then :rh
-      elsif snwh && rd   then :snwh_rd
-      elsif snwh         then :snwh
-      elsif rd           then :rd
-      else                    :reg
-      end
-
-      buckets[key] += s.pay.to_f
-    end
-
+    buckets = Hash.new(0.0)
+    slices.each { |s| buckets[slice_bucket_key(s)] += s.pay.to_f }
     buckets
+  end
+
+  # ---------------------------------------------------------------------------
+  # Determines which pay/time bucket a slice belongs to.
+  # Uses boolean flags from the slice (reliable) and code string for SNWH/RH
+  # detection (hyphens only — codes are generated as "RH", "SNWH", "RH-RD", etc.)
+  # ---------------------------------------------------------------------------
+  def slice_bucket_key(s)
+    code = s.multiplier_code.to_s.upcase
+    nd   = s.night_diff?
+    ot   = s.overtime?
+    rd   = s.rest_day?
+    snwh = code.include?("SNWH")
+    rh   = !snwh && code.include?("RH")
+
+    if nd
+      if    ot && rh && rd   then :nd_ot_rh_rd
+      elsif ot && rh         then :nd_ot_rh
+      elsif ot && snwh && rd then :nd_ot_snwh_rd
+      elsif ot && snwh       then :nd_ot_snwh
+      elsif ot && rd         then :nd_ot_rd
+      elsif ot               then :nd_ot
+      elsif rh && rd         then :nd_rh_rd
+      elsif rh               then :nd_rh
+      elsif snwh && rd       then :nd_snwh_rd
+      elsif snwh             then :nd_snwh
+      elsif rd               then :nd_rd
+      else                        :nd_ord
+      end
+    elsif ot
+      if    rh && rd   then :ot_rh_rd
+      elsif rh         then :ot_rh
+      elsif snwh && rd then :ot_snwh_rd
+      elsif snwh       then :ot_snwh
+      elsif rd         then :ot_rd
+      else                  :ot
+      end
+    elsif rh && rd   then :rh_rd
+    elsif rh         then :rh
+    elsif snwh && rd then :snwh_rd
+    elsif snwh       then :snwh
+    elsif rd         then :rd
+    else                  :reg
+    end
   end
 
   # ---------------------------------------------------------------------------
