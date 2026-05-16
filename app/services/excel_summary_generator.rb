@@ -197,6 +197,7 @@ class ExcelSummaryGenerator
 
     write_header(sheet)
     write_employees(sheet)
+    hide_inactive_columns(sheet)
 
     workbook
   end
@@ -569,6 +570,21 @@ class ExcelSummaryGenerator
     elsif snwh       then :snwh
     elsif rd         then :rd
     else                  :reg
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Hide every COL column that has no data for this period so the sheet is
+  # narrow enough to print. @active_cols is set by write_employees.
+  # ---------------------------------------------------------------------------
+  def hide_inactive_columns(sheet)
+    inactive = COL.keys - @active_cols
+    inactive.each do |key|
+      col_0 = COL.fetch(key) - 1
+      range = sheet.cols.get_range(col_0)
+      range.hidden       = true
+      range.width        = 0
+      range.custom_width = true
     end
   end
 
