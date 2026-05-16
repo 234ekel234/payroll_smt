@@ -2,7 +2,7 @@ require "test_helper"
 
 class HolidaysControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @holiday = holidays(:one)
+    @holiday = holidays(:labor_day)
   end
 
   test "should get index" do

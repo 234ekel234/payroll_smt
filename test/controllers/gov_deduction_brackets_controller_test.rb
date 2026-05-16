@@ -2,7 +2,7 @@ require "test_helper"
 
 class GovDeductionBracketsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @gov_deduction_bracket = gov_deduction_brackets(:one)
+    @gov_deduction_bracket = gov_deduction_brackets(:sss_low)
   end
 
   test "should get index" do

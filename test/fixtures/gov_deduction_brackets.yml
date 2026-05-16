@@ -1,11 +1,17 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+sss_low:
+  deduction_type: 0
+  range_min: 0
+  range_max: 5249.99
+  amount: 250.00
 
-# This model initially had no columns defined. If you add columns to the
-# model remove the "{}" from the fixture names and add the columns immediately
-# below each fixture, per the syntax in the comments below
-#
-one: {}
-# column: value
-#
-two: {}
-# column: value
+philhealth_low:
+  deduction_type: 1
+  range_min: 0
+  range_max: 10000
+  amount: 250.00
+
+pagibig_low:
+  deduction_type: 2
+  range_min: 0
+  range_max: 1500
+  amount: 0.0

@@ -46,9 +46,13 @@ class TimeSlicerService
   def generate_slices
     return [] unless @dtr.clock_in && @dtr.clock_out
 
-    # ✅ Clip early clock-ins to shift start
     c_in  = [@dtr.clock_in, @shift_start].max
     c_out = @dtr.clock_out
+
+    # Preload holidays and multipliers once — avoids N+1 (one query per slice otherwise)
+    date_range = c_in.to_date..(c_out.to_date + 1)
+    @holidays_cache    = Holiday.where(date: date_range).index_by(&:date)
+    @multipliers_cache = PayMultiplier.all.index_by(&:code)
 
     # Determine if Overtime qualifies
     minutes_past_shift = ((c_out - @shift_end) / 60).to_i
@@ -87,7 +91,7 @@ class TimeSlicerService
     current_date = start_t.to_date
 
     # Holiday Check
-    holiday = Holiday.find_by(date: current_date)
+    holiday = @holidays_cache[current_date]
     h_type  = holiday ? holiday.holiday_type.to_s.downcase : "none"
 
     # Rest Day
@@ -99,7 +103,7 @@ class TimeSlicerService
 
     # Multiplier
     multiplier_code = build_multiplier_code(h_type, is_rest, is_ot)
-    pay_multiplier  = PayMultiplier.find_by(code: multiplier_code)
+    pay_multiplier  = @multipliers_cache[multiplier_code]
     base_rate = pay_multiplier ? pay_multiplier.base_multiplier.to_f : 1.0
 
     {

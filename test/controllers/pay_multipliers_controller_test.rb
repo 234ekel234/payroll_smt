@@ -2,7 +2,7 @@ require "test_helper"
 
 class PayMultipliersControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @pay_multiplier = pay_multipliers(:one)
+    @pay_multiplier = pay_multipliers(:regular)
   end
 
   test "should get index" do

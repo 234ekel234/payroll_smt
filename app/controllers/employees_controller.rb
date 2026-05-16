@@ -21,6 +21,7 @@ class EmployeesController < ApplicationController
 
     # 4. Final Sorting
     @employees = @employees.order(:name)
+    @companies = Employee.distinct.pluck(:company).compact.sort
   end
 
   # GET /employees/1

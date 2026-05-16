@@ -3,7 +3,8 @@ class DailyTimeRecordsController < ApplicationController
 
   def index
     # 1. Base query with eager loading to prevent N+1 queries
-    @daily_time_records = DailyTimeRecord.includes(:employee).order(date: :desc)
+    @companies = Employee.distinct.pluck(:company).compact.sort
+    @daily_time_records = DailyTimeRecord.includes(:employee, :time_slices).order(date: :desc)
 
     # 2. Filter by Employee Name
     if params[:employee_name].present?

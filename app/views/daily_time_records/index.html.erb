@@ -1,4 +1,4 @@
-<div class="container-fluid mt-4">
+<div class="mt-4">
   <%# Header Section %>
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -28,7 +28,7 @@
 
         <div class="col-md-2">
           <label class="small fw-bold text-muted text-uppercase" style="font-size: 0.65rem;">Company</label>
-          <%= f.select :company, Employee.distinct.pluck(:company).compact.sort, { include_blank: "All Companies", selected: params[:company] }, { class: "form-select form-select-sm border-0 shadow-sm" } %>
+          <%= f.select :company, @companies, { include_blank: "All Companies", selected: params[:company] }, { class: "form-select form-select-sm border-0 shadow-sm" } %>
         </div>
 
         <div class="col-md-2">

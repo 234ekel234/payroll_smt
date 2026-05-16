@@ -1,15 +1,17 @@
-# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+labor_day:
+  date: 2026-05-01
+  holiday_type: regular
+  name: Labor Day
+  applies_to: all
 
-one:
-  date: 2026-01-08
-  holiday_type: MyString
-  name: MyString
-  applies_to: MyString
-  notes: MyText
+christmas:
+  date: 2026-12-25
+  holiday_type: regular
+  name: Christmas Day
+  applies_to: all
 
-two:
-  date: 2026-01-08
-  holiday_type: MyString
-  name: MyString
-  applies_to: MyString
-  notes: MyText
+black_saturday:
+  date: 2026-04-04
+  holiday_type: special non-working
+  name: Black Saturday
+  applies_to: all
