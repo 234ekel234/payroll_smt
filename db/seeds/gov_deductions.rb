@@ -3,11 +3,13 @@ puts "Cleaning and Seeding Government Brackets (Math Logic)..."
 GovDeductionBracket.destroy_all
 
 # SSS 2026 Logic
-(5000..35000).step(500).each do |msc|
+# Ranges are contiguous: first bracket starts at 0, each subsequent bracket
+# starts at the previous bracket's max + 0.01 (i.e. msc - 250).
+(5000..35000).step(500).each_with_index do |msc, i|
   GovDeductionBracket.create!(
     deduction_type: :sss,
-    range_min: msc - 249.99,
-    range_max: msc + 250,
+    range_min: i == 0 ? 0 : msc - 250.0,
+    range_max: msc + 249.99,
     amount: (msc * 0.05).round(2)
   )
 end

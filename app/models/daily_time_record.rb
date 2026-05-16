@@ -28,7 +28,7 @@ class DailyTimeRecord < ApplicationRecord
 
     # Assign Totals
     self.late_minutes        = summary[:late_minutes]
-    self.overtime_minutes    = summary[:ot_minutes]
+    self.overtime_minutes    = summary[:overtime_minutes]
     self.night_diff_minutes  = summary[:night_diff_minutes]
     self.holiday_minutes     = summary[:holiday_minutes]
     

@@ -1,17 +1,29 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
-one:
-  code: MyString
-  name: MyString
-  holiday_type: MyString
+regular:
+  code: REGULAR
+  name: Regular
   rest_day: false
   overtime: false
-  base_multiplier: 9.99
+  base_multiplier: 1.0
 
-two:
-  code: MyString
-  name: MyString
-  holiday_type: MyString
+overtime:
+  code: OD-OT
+  name: Overtime
+  rest_day: false
+  overtime: true
+  base_multiplier: 1.25
+
+rest_day:
+  code: RD
+  name: Rest Day
+  rest_day: true
+  overtime: false
+  base_multiplier: 1.30
+
+regular_holiday:
+  code: RH
+  name: Regular Holiday
   rest_day: false
   overtime: false
-  base_multiplier: 9.99
+  base_multiplier: 2.0

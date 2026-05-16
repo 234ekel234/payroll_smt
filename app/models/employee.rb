@@ -16,6 +16,7 @@ class Employee < ApplicationRecord
   # --- Validations ---
   validates :name, presence: true
   validates :person_id, presence: true, uniqueness: true
+  validates :basic_rate, presence: true, numericality: { greater_than: 0 }
   validates :work_days, presence: true
   validate  :work_days_are_valid
 

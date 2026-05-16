@@ -50,7 +50,7 @@ class PayrollGenerator
       
       # Determine category
       is_holiday = slice.holiday || slice.multiplier_code&.start_with?("RH", "SNWH")
-      is_rest    = slice.rest_day || slice.multiplier_code&.include?("RD")
+      is_rest    = slice.rest_day || slice.multiplier_code&.split("-")&.include?("RD")
 
       if is_holiday
         totals[:holiday_pay] += slice_money
@@ -63,7 +63,7 @@ class PayrollGenerator
       end
 
       if slice.night_diff
-        totals[:night_diff_pay] += (duration_mins / 60.0) * hourly_rate * 0.10
+        totals[:night_diff_pay] += (duration_mins / 60.0) * hourly_rate * multiplier * 0.10
       end
     end
 

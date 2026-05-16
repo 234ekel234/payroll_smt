@@ -7,6 +7,8 @@ class Payroll < ApplicationRecord
     where(date: payroll.start_date..payroll.end_date) 
   }, through: :employee
 
+  validates :start_date, :end_date, :gross_pay, presence: true
+
   accepts_nested_attributes_for :payroll_deductions, allow_destroy: true, reject_if: :all_blank
 
   # --- PUBLIC HELPERS ---
