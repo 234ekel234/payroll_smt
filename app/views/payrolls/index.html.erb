@@ -124,13 +124,13 @@
           <label class="form-label fw-bold small text-muted text-uppercase mb-2">Filter by Company</label>
           <div class="d-flex flex-wrap gap-2">
             <% @companies.each do |company_name| %>
-              <% checked = params[:companies]&.include?(company_name) %>
-              <%= check_box_tag "companies[]", company_name, checked,
+              <%= check_box_tag "companies[]", company_name,
+                    params[:companies]&.include?(company_name),
                     class: "btn-check",
                     id: "filter_company_#{company_name.parameterize}",
                     autocomplete: "off" %>
               <%= label_tag "filter_company_#{company_name.parameterize}", company_name,
-                    class: "btn btn-sm #{checked ? 'btn-dark' : 'btn-outline-secondary'}" %>
+                    class: "btn btn-sm btn-outline-primary" %>
             <% end %>
           </div>
         </div>
