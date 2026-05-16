@@ -41,3 +41,27 @@
 ### ✅ 9. Empty test suite
 - **Files:** `test/models/employee_test.rb`, `test/models/payroll_test.rb`, `test/models/time_slicer_service_test.rb`
 - **Fix:** Wrote real tests covering: Employee validations and shift template resolution, Payroll `calculate_final_amounts!` and net_pay floor, and TimeSlicerService for regular shifts, late arrival, grace period, OT threshold, night diff, early clock-in clipping, holiday tagging, and missing-shift guard.
+
+---
+
+## 🔲 New Issues Found
+
+### ✅ 10. `TimeSlice.pay` never populated — Excel summary pay breakdown always 0
+- **File:** `app/services/payroll_generator.rb`, `app/services/excel_summary_generator.rb:615`
+- **Issue:** `ExcelSummaryGenerator#compute_pays` sums `s.pay` per slice for the detailed pay breakdown (OT rest day, SNWH, regular holiday, etc.), but `TimeSlicerService` never sets the `pay` column when building slices. Every detailed pay bucket in the Excel summary is always 0.
+- **Fix:** In `PayrollGenerator#process_employee`, after computing `slice_money` for each slice, call `slice.update_column(:pay, slice_money.round(2))`.
+
+### 11. Hardcoded signatory names in `ExcelSummaryGenerator`
+- **File:** `app/services/excel_summary_generator.rb:178`
+- **Issue:** `prepared_by` and `approved_by` default to hardcoded names ("Elaine Beatriz C. Bello", "Ms. Winalene E. Sescar"). These should be configurable.
+- **Fix:** Move to Rails credentials or a config/settings table so they can be changed without a code deploy.
+
+### ✅ 12. Hardcoded fallback company name in `ExcelPayrollGenerator`
+- **File:** `app/services/excel_payroll_generator.rb:37`
+- **Issue:** When a payroll's company is `"default"`, the payslip header falls back to the hardcoded string `"Facilities Managers, Inc."`.
+- **Fix:** Move the fallback to Rails credentials or an ENV variable.
+
+### ✅ 13. Incomplete deductions seed
+- **File:** `db/seeds/deductions.rb`
+- **Issue:** Only SSS, PHIC, and HDMF statutory deductions are seeded. No standard deductions (loans, uniforms, rice allowance, etc.) are seeded, so users must create everything manually from scratch.
+- **Fix:** Seed a standard set of common deductions as inactive defaults that users can activate.

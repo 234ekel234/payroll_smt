@@ -34,7 +34,8 @@ class ExcelPayrollGenerator
       # 2. If it's blank, use the display name passed from the controller.
       # 3. If that's also "default", use a final fallback.
       employee_company = payroll.employee.company.presence || @company_display_name
-      final_name = (employee_company.downcase == 'default') ? "Facilities Managers, Inc." : employee_company
+      fallback   = ENV.fetch("DEFAULT_COMPANY_NAME", "")
+      final_name = (employee_company.downcase == 'default') ? fallback : employee_company
 
       # Pass the specific name to the injector
       inject_values(sheet, row_offset, col_offset, payroll, true, final_name)

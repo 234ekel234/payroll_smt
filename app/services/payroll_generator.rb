@@ -65,6 +65,8 @@ class PayrollGenerator
       if slice.night_diff
         totals[:night_diff_pay] += (duration_mins / 60.0) * hourly_rate * multiplier * 0.10
       end
+
+      slice.update_column(:pay, slice_money.round(2))
     end
 
     # 3. Final Gross Calculation
