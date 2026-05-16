@@ -36,10 +36,6 @@ class ReportsController < ApplicationController
 
       late_freq = records.where("late_minutes > 0").count.to_i
 
-      if params[:late_filter].present? && late_freq < params[:late_filter].to_i
-        next nil
-      end
-
       {
         employee: employee,
         late_count: late_freq,
@@ -48,6 +44,10 @@ class ReportsController < ApplicationController
         work_hours: (total_minutes / 60.0).round(2),
         ot_hours: (records.sum { |r| r.overtime_minutes.to_i } / 60.0).round(2)
       }
-    end.compact
+    end
+
+    if params[:late_filter].present?
+      @report_data.select! { |d| d[:late_count] >= params[:late_filter].to_i }
+    end
   end
 end

@@ -1,4 +1,4 @@
-<div class="container-fluid mt-4">
+<div class="mt-4">
   <%# Header Section %>
   <div class="row mb-4 align-items-center">
     <div class="col">
@@ -68,9 +68,6 @@
         <tbody>
           <% if @report_data.any? %>
             <% @report_data.each do |data| %>
-              <%# Conditional Display Logic for Late Filter (View Side) %>
-              <% next if params[:late_filter].present? && data[:late_count] < params[:late_filter].to_i %>
-
               <tr>
                 <td class="ps-3">
                   <div class="fw-bold text-dark"><%= data[:employee]&.name || "Deleted/Unknown Employee" %></div>
@@ -106,7 +103,8 @@
                 <td class="text-center">
                   <div class="fw-bold"><%= data[:work_hours] %>h</div>
                   <div class="progress mt-1" style="height: 4px; width: 60px; margin: 0 auto;">
-                    <% progress = [ (data[:work_hours] / 160.0 * 100), 100].min %>
+                    <% max_hours = ((@end_date - @start_date).to_i + 1) * 8.0 %>
+                    <% progress = [data[:work_hours] / max_hours * 100, 100].min %>
                     <div class="progress-bar bg-primary" style="width: <%= progress %>%"></div>
                   </div>
                 </td>
