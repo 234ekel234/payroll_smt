@@ -37,29 +37,32 @@
             </li>
 
             <li class="nav-item">
-              <%= link_to "Daily Time Records", daily_time_records_path, class: "nav-link" %>
+              <%= link_to "Attendance", daily_time_records_path, class: "nav-link" %>
             </li>
+
             <li class="nav-item">
-              <%= link_to "Holidays", holidays_path, class: "nav-link" %>
+              <%= link_to "Payroll", payrolls_path, class: "nav-link" %>
             </li>
-            <li class="nav-item">
-              <%= link_to "Payrolls", payrolls_path, class: "nav-link" %>
-            </li>
-            <li class="nav-item">
-              <%= link_to "Pay Multiplier", pay_multipliers_path, class: "nav-link" %>
-            </li>
-            <li class="nav-item">
-              <%= link_to "Deductions", deductions_path, class: "nav-link" %>
-            </li>
-            <li class="nav-item">
-              <%= link_to "Government Deductions", gov_deduction_brackets_path, class: "nav-link" %>
-            </li>
+
             <li class="nav-item">
               <%= link_to "Attendance Report", attendance_report_path, class: "nav-link" %>
             </li>
-            <li class="nav-item">
-              <%= link_to "Shifts", shifts_path, class: "nav-link" %>
+
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                Settings
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><%= link_to "Shifts", shifts_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Pay Multipliers", pay_multipliers_path, class: "dropdown-item" %></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><%= link_to "Deductions", deductions_path, class: "dropdown-item" %></li>
+                <li><%= link_to "Gov. Deductions", gov_deduction_brackets_path, class: "dropdown-item" %></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><%= link_to "Holidays", holidays_path, class: "dropdown-item" %></li>
+              </ul>
             </li>
+
           </ul>
         </div>
       </div>
