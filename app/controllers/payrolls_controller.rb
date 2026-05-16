@@ -15,6 +15,17 @@ class PayrollsController < ApplicationController
   def show
     @payroll = Payroll.includes(payroll_deductions: :deduction).find(params[:id])
 
+    dtr_ids          = @payroll.daily_time_records.pluck(:id)
+    slices           = TimeSlice.where(daily_time_record_id: dtr_ids)
+    @slice_holiday_mins  = slices.where(holiday: true).sum(:minutes)
+    @slice_rd_mins       = slices.where(rest_day: true, holiday: false).sum(:minutes)
+    @slice_ot_mins       = slices.where(overtime: true, holiday: false, rest_day: false).sum(:minutes)
+    @slice_reg_mins      = slices.where(overtime: false, holiday: false, rest_day: false, night_diff: false).sum(:minutes)
+    @slice_nd_mins       = slices.where(night_diff: true).sum(:minutes)
+    @total_clocked_mins  = @payroll.daily_time_records.sum { |d|
+      d.clock_out && d.clock_in ? ((d.clock_out - d.clock_in) / 60).to_i : 0
+    }
+
     respond_to do |format|
       format.html
       format.pdf do

@@ -21,46 +21,40 @@
         <div class="col-6 text-end">
           <h5 class="fw-bold mb-0 text-uppercase"><%= @payroll.employee.name %></h5>
           <p class="text-muted small mb-1">Employee ID: <%= @payroll.employee.person_id %></p>
-          <span class="badge <%= @payroll.status == 'processed' ? 'bg-success' : 'bg-warning text-dark' %>">
+          <%
+            status_class = case @payroll.status
+                           when 'finalized' then 'bg-success'
+                           when 'processed' then 'bg-primary'
+                           else 'bg-warning text-dark'
+                           end
+          %>
+          <span class="badge <%= status_class %>">
             <%= (@payroll.status || 'DRAFT').upcase %>
           </span>
         </div>
       </div>
 
-      <%# --- TIME DATA CALCULATIONS --- %>
-      <% 
-        dtr_ids = @payroll.daily_time_records.pluck(:id)
-        slices  = TimeSlice.where(daily_time_record_id: dtr_ids)
-        
-        h_mins   = slices.where(holiday: true).sum(:minutes)
-        rd_mins  = slices.where(rest_day: true, holiday: false).sum(:minutes)
-        ot_mins  = slices.where(overtime: true, holiday: false, rest_day: false).sum(:minutes)
-        reg_mins = slices.where(overtime: false, holiday: false, rest_day: false).sum(:minutes)
-        nd_mins  = slices.where(night_diff: true).sum(:minutes)
-        
-        total_clocked_mins = @payroll.daily_time_records.sum { |d| d.clock_out && d.clock_in ? ((d.clock_out - d.clock_in) / 60).to_i : 0 }
-      %>
 
       <div class="row bg-light rounded p-3 mb-4 g-2 border mx-0 align-items-center text-center">
         <div class="col-md-3 text-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Gross Presence</small>
-          <h5 class="mb-0 fw-bold"><%= total_clocked_mins / 60 %>h <%= total_clocked_mins % 60 %>m</h5>
+          <h5 class="mb-0 fw-bold"><%= @total_clocked_mins / 60 %>h <%= @total_clocked_mins % 60 %>m</h5>
         </div>
         <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Regular</small>
-          <h5 class="mb-0 fw-bold"><%= reg_mins / 60 %>h <%= reg_mins % 60 %>m</h5>
+          <h5 class="mb-0 fw-bold"><%= @slice_reg_mins / 60 %>h <%= @slice_reg_mins % 60 %>m</h5>
         </div>
         <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Holiday/RD</small>
-          <h5 class="mb-0 fw-bold"><%= (h_mins + rd_mins) / 60 %>h <%= (h_mins + rd_mins) % 60 %>m</h5>
+          <h5 class="mb-0 fw-bold"><%= (@slice_holiday_mins + @slice_rd_mins) / 60 %>h <%= (@slice_holiday_mins + @slice_rd_mins) % 60 %>m</h5>
         </div>
         <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Overtime</small>
-          <h5 class="mb-0 fw-bold"><%= ot_mins / 60 %>h <%= ot_mins % 60 %>m</h5>
+          <h5 class="mb-0 fw-bold"><%= @slice_ot_mins / 60 %>h <%= @slice_ot_mins % 60 %>m</h5>
         </div>
         <div class="col border-start">
           <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.6rem;">Night Diff</small>
-          <h5 class="mb-0 fw-bold"><%= nd_mins / 60 %>h <%= nd_mins % 60 %>m</h5>
+          <h5 class="mb-0 fw-bold"><%= @slice_nd_mins / 60 %>h <%= @slice_nd_mins % 60 %>m</h5>
         </div>
       </div>
 
@@ -148,9 +142,9 @@
             <% end %>
           <% end %>
 
-          <%# Render Dynamic/Miscellaneous Deductions %>
+          <%# Render Dynamic/Miscellaneous Deductions (exclude Statutory — shown above) %>
           <% if @payroll.payroll_deductions.any? %>
-            <% @payroll.payroll_deductions.each do |pd| %>
+            <% @payroll.payroll_deductions.reject { |pd| pd.note == "Statutory" }.each do |pd| %>
               <div class="d-flex justify-content-between mb-2">
                 <div>
                   <span class="d-block small fw-bold text-dark">
@@ -178,7 +172,7 @@
       <div class="mt-5 p-4 bg-dark text-white rounded text-center shadow-lg">
         <h6 class="text-uppercase small mb-1 opacity-75">Net Take Home Pay</h6>
         <h1 class="display-4 fw-bold mb-0"><%= number_to_currency(@payroll.net_pay || 0, unit: "₱") %></h1>
-        <small class="opacity-50">Generated on: <%= Time.current.strftime("%m/%d/%Y %I:%M %p") %></small>
+        <small class="opacity-50">Generated: <%= @payroll.processed_at&.strftime("%m/%d/%Y %I:%M %p") || "—" %></small>
       </div>
     </div>
   </div>
