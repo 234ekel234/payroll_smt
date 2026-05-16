@@ -1,79 +1,115 @@
-# Payroll System - Client Setup
+# Payroll System
 
-This setup uses **Docker** to run the Rails 8 app and Postgres 16 database.  
-The Rails app is prebuilt and hosted on Docker Hub, so no source code is required.
-
----
-
-## **1. Prerequisites**
-
-- Install [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- Modern Docker Desktop includes Docker Compose, no extra installation required
+A Rails 8 payroll management system for Philippine-based businesses. Handles employee attendance (DTR), automatic time slicing with pay multipliers (overtime, night differential, holidays, rest days), payroll generation, statutory deductions (SSS, PhilHealth, Pag-IBIG), and Excel/PDF payslip exports.
 
 ---
 
-## **2. Environment Variables**
+## Developer Setup
 
-1. Copy `.env.example` to `.env`:
+### Prerequisites
+
+- Ruby 3.2.2
+- PostgreSQL 16
+- Node.js (for Dart Sass)
+
+### Getting Started
+
+```bash
+bundle install
+cp .env.example .env        # fill in RAILS_MASTER_KEY and DB password
+bin/rails db:prepare        # create, migrate, seed
+bin/dev                     # starts Rails + Dart Sass watcher
+```
+
+App runs at `http://localhost:3000`.
+
+### Running Tests
+
+```bash
+bin/rails test                                      # all tests
+bin/rails test test/models/payroll_test.rb          # single file
+bin/rails test test/models/payroll_test.rb:42       # single test
+```
+
+### Linting
+
+```bash
+bundle exec rubocop       # check
+bundle exec rubocop -a    # auto-fix
+```
+
+---
+
+## Architecture Overview
+
+The core payroll pipeline runs in four stages:
+
+1. **DTR Import** — `DailyTimeRecordImporter` reads attendance from an Excel/CSV file or Google Sheets. Each row is matched to an employee by `person_id`. Expected columns: `person_id, first_name, last_name, date (MM/DD/YYYY), clock_in, clock_out`.
+
+2. **Time Slicing** — Saving a `DailyTimeRecord` triggers `TimeSlicerService`. It splits the clock-in/out span into typed segments by inserting boundary points at shift start/end, break start/end, 22:00, 06:00, and midnight. Each segment becomes a `TimeSlice` with a `multiplier_code` (e.g. `REGULAR`, `RH`, `SNWH-RD-OT`) resolved from the `PayMultiplier` table.
+
+3. **Payroll Generation** — `PayrollGenerator` reads `TimeSlice` records for a date range, applies each slice's `multiplier_percent` to compute pay buckets (`basic_pay`, `overtime_pay`, `holiday_pay`, `rest_day_pay`, `night_diff_pay`), and creates a `Payroll` record with `status: 'draft'`. Re-running for the same period safely replaces existing drafts.
+
+4. **Deductions** — `Payroll#apply_all_deductions` applies standard deductions (fixed amounts per employee) and statutory deductions (SSS, PhilHealth/PHIC, Pag-IBIG/HDMF) computed by `PayrollCalculator` against `GovDeductionBracket` salary tables. SSS uses last month's actual gross from the `Payroll` table, falling back to `basic_rate × 26` for new hires.
+
+**Exports** — `ExcelPayrollGenerator` fills company-specific `.xlsx` templates from `lib/templates/`. PDF payslips use Grover (headless Chrome) to render the payslip view.
+
+---
+
+## Client Setup (Docker)
+
+This setup uses **Docker** to run the Rails app and Postgres 16 database. No source code or Ruby installation is required.
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (includes Docker Compose)
+
+### 1. Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values:
 
 ```bash
 cp .env.example .env
+```
 
-Open .env and fill in:
-
-RAILS_MASTER_KEY → provided by your vendor
-
-PAYROLL_SYSTEM_DATABASE_PASSWORD → already set to secret123 by default
-
-Example .env.example:
-
-RAILS_MASTER_KEY=<paste-your-master-key-here>
+```env
+RAILS_MASTER_KEY=<provided by your vendor>
 PAYROLL_SYSTEM_DATABASE_PASSWORD=secret123
-3. Start the Application
+```
 
-Run both the Rails app and Postgres database:
+### 2. Start the Application
 
+```bash
 docker compose up -d
+```
 
-Docker will automatically pull the Rails image from Docker Hub and the official Postgres image if not already on your machine.
+Docker pulls the Rails image from Docker Hub and the official Postgres image automatically. Containers restart automatically on system reboot.
 
-Containers will restart automatically if your system reboots.
+### 3. First-Time Database Setup
 
-4. First-Time Database Setup
+Run once after the first `docker compose up`:
 
-Only required the first time:
-
+```bash
 docker compose exec web rails db:prepare
+```
 
-This will create the databases, run migrations, and seed initial data.
+### 4. Access the App
 
-5. Access the App
+`http://localhost:3000`
 
-Rails server runs at: http://localhost:3000
+### 5. Stop the App
 
-6. Stop Containers
-
-To stop the app and database:
-
+```bash
 docker compose down
+```
 
-The Postgres data is persisted in the volume postgres_data, so your database will not be lost.
+Postgres data is persisted in the `postgres_data` volume and will not be lost.
 
-7. Update the App
+### 6. Update the App
 
-When a new version of the Rails app is available on Docker Hub:
+When a new version is available on Docker Hub:
 
+```bash
 docker compose pull web
 docker compose up -d
-
-This pulls the new Rails image and restarts the container.
-
-Database remains intact because it is stored in the volume.
-
-8. Notes
-
-No source code is included; the client only runs the prebuilt Docker image.
-
-All secrets are managed via .env.
-
-If you want to modify the app, you need the full Rails source code and a local build.
+```
