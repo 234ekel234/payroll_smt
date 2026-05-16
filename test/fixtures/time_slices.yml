@@ -2,22 +2,28 @@
 
 one:
   daily_time_record: one
-  start_time: 2026-01-09 16:51:23
-  end_time: 2026-01-09 16:51:23
-  minutes: 1
-  pay: 9.99
+  start_time: 2026-01-09 08:00:00
+  end_time: 2026-01-09 17:00:00
+  minutes: 480
+  pay: 81.25
   night_diff: false
   holiday: false
   rest_day: false
-  multiplier_name: MyString
+  overtime: false
+  multiplier_code: REGULAR
+  multiplier_name: Regular
+  multiplier_percent: 100.00
 
 two:
   daily_time_record: two
-  start_time: 2026-01-09 16:51:23
-  end_time: 2026-01-09 16:51:23
-  minutes: 1
-  pay: 9.99
+  start_time: 2026-01-09 08:00:00
+  end_time: 2026-01-09 17:00:00
+  minutes: 480
+  pay: 100.00
   night_diff: false
   holiday: false
   rest_day: false
-  multiplier_name: MyString
+  overtime: false
+  multiplier_code: REGULAR
+  multiplier_name: Regular
+  multiplier_percent: 100.00

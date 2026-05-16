@@ -17,10 +17,10 @@ class DeductionsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create deduction" do
     assert_difference("Deduction.count") do
-      post deductions_url, params: { deduction: {} }
+      post deductions_url, params: { deduction: { name: "Transport Allowance", amount: 150.00, amount_type: "fixed", active: true } }
     end
 
-    assert_redirected_to deduction_url(Deduction.last)
+    assert_redirected_to deductions_url
   end
 
   test "should show deduction" do
@@ -34,15 +34,13 @@ class DeductionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update deduction" do
-    patch deduction_url(@deduction), params: { deduction: {} }
-    assert_redirected_to deduction_url(@deduction)
+    patch deduction_url(@deduction), params: { deduction: { name: @deduction.name, amount: 600.00, amount_type: @deduction.amount_type } }
+    assert_redirected_to deductions_url
   end
 
-  test "should destroy deduction" do
-    assert_difference("Deduction.count", -1) do
-      delete deduction_url(@deduction)
-    end
-
+  test "should archive deduction" do
+    delete deduction_url(@deduction)
     assert_redirected_to deductions_url
+    assert_equal false, Deduction.find(@deduction.id).active
   end
 end

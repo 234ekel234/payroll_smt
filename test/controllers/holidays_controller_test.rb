@@ -17,7 +17,7 @@ class HolidaysControllerTest < ActionDispatch::IntegrationTest
 
   test "should create holiday" do
     assert_difference("Holiday.count") do
-      post holidays_url, params: { holiday: { applies_to: @holiday.applies_to, date: @holiday.date, holiday_type: @holiday.holiday_type, name: @holiday.name, notes: @holiday.notes } }
+      post holidays_url, params: { holiday: { applies_to: @holiday.applies_to, date: "2026-11-01", holiday_type: @holiday.holiday_type, name: "All Saints' Day", notes: @holiday.notes } }
     end
 
     assert_redirected_to holiday_url(Holiday.last)

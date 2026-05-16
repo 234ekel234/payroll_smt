@@ -5,6 +5,7 @@ regular:
   name: Regular
   rest_day: false
   overtime: false
+  holiday_type: none
   base_multiplier: 1.0
 
 overtime:
@@ -12,6 +13,7 @@ overtime:
   name: Overtime
   rest_day: false
   overtime: true
+  holiday_type: none
   base_multiplier: 1.25
 
 rest_day:
@@ -19,6 +21,7 @@ rest_day:
   name: Rest Day
   rest_day: true
   overtime: false
+  holiday_type: none
   base_multiplier: 1.30
 
 regular_holiday:
@@ -26,4 +29,5 @@ regular_holiday:
   name: Regular Holiday
   rest_day: false
   overtime: false
+  holiday_type: regular
   base_multiplier: 2.0

@@ -116,7 +116,7 @@
                       </div>
                     </td>
                     <td class="text-end pe-3">
-                      <span class="fw-bold text-dark">x<%= number_with_precision(slice.multiplier_percent / 100.0, precision: 2) %></span>
+                      <span class="fw-bold text-dark">x<%= number_with_precision((slice.multiplier_percent || 0) / 100.0, precision: 2) %></span>
                       
                       <% if slice.night_diff %>
                         <div class="text-secondary fw-bold" style="font-size: 0.75rem;">

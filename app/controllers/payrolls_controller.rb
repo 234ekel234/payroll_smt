@@ -39,6 +39,20 @@ class PayrollsController < ApplicationController
     end
   end
 
+  def new
+    @payroll = Payroll.new
+  end
+
+  def create
+    @payroll = Payroll.new(payroll_params)
+    if @payroll.save
+      @payroll.calculate_final_amounts!
+      redirect_to @payroll, notice: "Payroll created successfully."
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
   def generate
     start_date = params[:start_date].presence&.to_date || Date.today.beginning_of_month
     end_date   = params[:end_date].presence&.to_date   || Date.today.end_of_month
