@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_09_130101) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_17_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,7 +20,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_09_130101) do
     t.datetime "clock_out"
     t.datetime "created_at", null: false
     t.date "date"
-    t.integer "early_leave_minutes"
     t.bigint "employee_id", null: false
     t.integer "holiday_minutes"
     t.integer "late_minutes"
@@ -118,6 +117,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_09_130101) do
   end
 
   create_table "payrolls", force: :cascade do |t|
+    t.decimal "absent_holiday_pay", precision: 10, scale: 2, default: "0.0"
     t.decimal "allowance"
     t.decimal "basic_pay"
     t.decimal "cash_advance"
@@ -162,7 +162,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_09_130101) do
   create_table "time_slices", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "daily_time_record_id", null: false
-    t.integer "early_leave", default: 0, null: false
     t.datetime "end_time"
     t.boolean "holiday"
     t.integer "late", default: 0, null: false

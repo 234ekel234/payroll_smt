@@ -280,8 +280,8 @@ class ExcelSummaryGenerator
         ot_snwh_rd_pay:    pays[:ot_snwh_rd],
 
         # Regular Holiday
-        rh_not_worked_hr:  times[:rh_not_worked_hr],
-        rh_not_worked_pay: pays[:rh_not_worked],
+        rh_not_worked_hr:  payroll.daily_rate.to_f > 0 ? ((payroll.absent_holiday_pay.to_f / payroll.daily_rate.to_f) * 8).round : 0,
+        rh_not_worked_pay: payroll.absent_holiday_pay.to_f,
         rh_hr:             times[:rh_hr],
         rh_pay:            pays[:rh],
         ot_rh_hr:          times[:ot_rh_hr],
@@ -516,7 +516,6 @@ class ExcelSummaryGenerator
       h[:"#{k}_total"] = (total / 60.0).round(2)
     end
 
-    result[:rh_not_worked_hr] = buckets[:rh_not_worked] > 0 ? 8 : 0
     result
   end
 

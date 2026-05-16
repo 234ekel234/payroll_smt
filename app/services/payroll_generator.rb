@@ -71,7 +71,8 @@ class PayrollGenerator
     end
 
     # 3. Regular holiday pay for absent-but-eligible employees
-    totals[:holiday_pay] += absent_holiday_pay(employee, dtr_dates)
+    absent_pay = absent_holiday_pay(employee, dtr_dates)
+    totals[:holiday_pay] += absent_pay
 
     # 4. Final Gross Calculation
     gross_pay = (totals.values.sum + total_allowance).round(2)
@@ -90,6 +91,7 @@ class PayrollGenerator
       rest_day_pay: totals[:rest_day_pay],
       night_diff_pay: totals[:night_diff_pay],
       gross_pay: gross_pay,
+      absent_holiday_pay: absent_pay.round(2),
       net_pay: gross_pay, # Will be updated after deductions
       status: "draft",
       processed_at: Time.current
