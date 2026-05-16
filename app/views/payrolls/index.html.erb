@@ -87,12 +87,14 @@
               <div class="row g-3">
                 <div class="col-md-8">
                   <label class="form-label fw-bold small text-uppercase text-primary mb-2 d-block">Target Companies</label>
-                  <div class="d-flex flex-wrap gap-2 p-3 border rounded bg-white shadow-sm" style="max-height: 150px; overflow-y: auto;">
+                  <div class="d-flex flex-wrap gap-2">
                     <% @companies.each do |company_name| %>
-                      <div class="form-check form-check-inline">
-                        <%= check_box_tag "companies[]", company_name, false, class: "form-check-input", id: "gen_company_#{company_name.parameterize}" %>
-                        <%= label_tag "gen_company_#{company_name.parameterize}", company_name, class: "form-check-label small fw-semibold" %>
-                      </div>
+                      <%= check_box_tag "companies[]", company_name, false,
+                            class: "btn-check",
+                            id: "gen_company_#{company_name.parameterize}",
+                            autocomplete: "off" %>
+                      <%= label_tag "gen_company_#{company_name.parameterize}", company_name,
+                            class: "btn btn-sm btn-outline-primary" %>
                     <% end %>
                   </div>
                 </div>
