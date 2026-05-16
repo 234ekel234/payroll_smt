@@ -1,42 +1,95 @@
 <%= form_with(model: payroll, id: "payroll-form") do |f| %>
+  <% if payroll.errors.any? %>
+    <div class="alert alert-danger shadow-sm">
+      <h6 class="fw-bold"><%= pluralize(payroll.errors.count, "error") %> prohibited this payroll from being saved:</h6>
+      <ul class="mb-0">
+        <% payroll.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <div class="row g-4">
+    <%# --- 1. TOP INFO BAR --- %>
     <div class="col-md-4">
-      <%= f.label :employee_id, class: "form-label fw-bold" %>
+      <%= f.label :employee_id, "Employee", class: "form-label fw-bold" %>
       <%= f.collection_select :employee_id, Employee.all, :id, :name, { prompt: "Select Employee" }, { class: "form-select shadow-sm" } %>
     </div>
     <div class="col-md-4">
       <%= f.label :gross_pay, "Basic Gross for Period", class: "form-label fw-bold" %>
       <div class="input-group shadow-sm">
-        <span class="input-group-text">₱</span>
+        <span class="input-group-text bg-primary text-white">₱</span>
         <%= f.number_field :gross_pay, step: :any, class: "form-control", placeholder: "0.00" %>
       </div>
     </div>
     <div class="col-md-4">
       <%= f.label :status, class: "form-label fw-bold" %>
-      <%= f.select :status, [['Draft', 'draft'], ['Processed', 'processed']], {}, { class: "form-select" } %>
+      <%= f.select :status, [['Draft', 'draft'], ['Processed', 'processed']], {}, { class: "form-select shadow-sm" } %>
     </div>
 
-    <hr class="my-5">
+    <hr class="my-4">
 
+    <%# --- 2. MAIN INPUT BODY --- %>
     <div class="row">
+      <%# --- LEFT COLUMN: STATUTORY & LOANS --- %>
       <div class="col-md-5 border-end">
-        <h5 class="text-primary mb-3"><i class="bi bi-bank"></i> Statutory Deductions</h5>
-        <div class="p-3 bg-light rounded border">
-          <%= f.collection_check_boxes :deduction_ids, Deduction.where(active: true), :id, :name do |b| %>
-            <div class="form-check mb-2">
-              <%# Pre-checks if the employee has this deduction assigned by default %>
-              <%= b.check_box(class: "form-check-input", checked: payroll.employee&.deductions&.include?(b.object)) %>
-              <%= b.label(class: "form-check-label fw-semibold") %>
-              <div class="small text-muted"><%= b.object.category %></div>
-            </div>
-          <% end %>
+        <h5 class="text-primary mb-3"><i class="bi bi-bank"></i> Statutory Contributions</h5>
+        <div class="p-3 bg-light rounded border shadow-sm mb-4">
+          <div class="mb-3">
+            <%= f.label :sss_amount, "SSS Contribution", class: "form-label small fw-bold" %>
+            <%= f.number_field :sss_amount, step: :any, class: "form-control", placeholder: "0.00" %>
+          </div>
+          <div class="mb-3">
+            <%= f.label :phic_amount, "PhilHealth (PHIC)", class: "form-label small fw-bold" %>
+            <%= f.number_field :phic_amount, step: :any, class: "form-control", placeholder: "0.00" %>
+          </div>
+          <div class="mb-3">
+            <%= f.label :hdmf_amount, "Pag-IBIG (HDMF)", class: "form-label small fw-bold" %>
+            <%= f.number_field :hdmf_amount, step: :any, class: "form-control", placeholder: "0.00" %>
+          </div>
+        </div>
+
+        <h5 class="text-danger mb-3"><i class="bi bi-cash-stack"></i> Government Loans</h5>
+        <div class="p-3 bg-light rounded border shadow-sm">
+          <div class="mb-3">
+            <%= f.label :sss_loan, "SSS Loan", class: "form-label small fw-bold" %>
+            <%= f.number_field :sss_loan, step: :any, class: "form-control", placeholder: "0.00" %>
+          </div>
+          <div class="mb-2">
+            <%= f.label :hdmf_loan, "Pag-IBIG Loan", class: "form-label small fw-bold" %>
+            <%= f.number_field :hdmf_loan, step: :any, class: "form-control", placeholder: "0.00" %>
+          </div>
         </div>
       </div>
 
+      <%# --- RIGHT COLUMN: COMPANY DEDUCTIONS & MANUAL ADJUSTMENTS --- %>
       <div class="col-md-7">
+        <h5 class="text-secondary mb-3"><i class="bi bi-building"></i> Company Specifics</h5>
+        <div class="p-3 border rounded shadow-sm mb-4 bg-white">
+          <div class="row g-3">
+            <div class="col-6">
+              <%= f.label :cash_advance, "Cash Loan", class: "form-label small fw-bold" %>
+              <%= f.number_field :cash_advance, step: :any, class: "form-control", placeholder: "0.00" %>
+            </div>
+            <div class="col-6">
+              <%= f.label :rice_deduction, "Rice Deduction", class: "form-label small fw-bold" %>
+              <%= f.number_field :rice_deduction, step: :any, class: "form-control", placeholder: "0.00" %>
+            </div>
+            <div class="col-6">
+              <%= f.label :materials_deduction, "Materials", class: "form-label small fw-bold" %>
+              <%= f.number_field :materials_deduction, step: :any, class: "form-control", placeholder: "0.00" %>
+            </div>
+            <div class="col-6">
+              <%= f.label :groceries_deduction, "Groceries", class: "form-label small fw-bold" %>
+              <%= f.number_field :groceries_deduction, step: :any, class: "form-control", placeholder: "0.00" %>
+            </div>
+          </div>
+        </div>
+
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="text-danger mb-0"><i class="bi bi-pencil-square"></i> Manual Adjustments</h5>
-          <button type="button" class="btn btn-sm btn-outline-danger" onclick="addManualRow()">
+          <h5 class="text-danger mb-0"><i class="bi bi-pencil-square"></i> Miscellaneous</h5>
+          <button type="button" class="btn btn-sm btn-outline-danger shadow-sm" onclick="addManualRow()">
             <i class="bi bi-plus-lg"></i> Add Row
           </button>
         </div>
@@ -44,23 +97,32 @@
         <div id="manual-deductions-list">
           <%= f.fields_for :payroll_deductions do |pd| %>
             <% if pd.object.deduction_id.nil? %>
-              <div class="input-group mb-2 manual-row-item">
-                <%= pd.text_field :note, placeholder: "Description (e.g. Loan Payment)", class: "form-control" %>
+              <div class="input-group mb-2 manual-row-item shadow-sm">
+                <%= pd.hidden_field :id %>
+                <%= pd.text_field :note, placeholder: "Description", class: "form-control" %>
                 <span class="input-group-text">₱</span>
                 <%= pd.number_field :amount, step: :any, placeholder: "0.00", class: "form-control" %>
-                <button type="button" class="btn btn-outline-secondary" onclick="this.closest('.manual-row-item').remove()">
-                  <i class="bi bi-x"></i>
-                </button>
+                
+                <% if pd.object.persisted? %>
+                  <div class="input-group-text bg-white">
+                    <%= pd.check_box :_destroy, class: "form-check-input me-2" %>
+                    <small class="text-danger fw-bold">DEL</small>
+                  </div>
+                <% else %>
+                  <button type="button" class="btn btn-outline-secondary" onclick="this.closest('.manual-row-item').remove()">
+                    <i class="bi bi-x"></i>
+                  </button>
+                <% end %>
               </div>
             <% end %>
           <% end %>
         </div>
-        <p class="small text-muted mt-2 fst-italic text-end">Note: Master deductions will be calculated automatically upon saving.</p>
       </div>
     </div>
 
-    <div class="col-12 mt-5 py-3 border-top text-center">
-      <%= f.submit "Save & Finalize Payroll", class: "btn btn-success btn-lg px-5 shadow" %>
+    <%# --- 3. ACTION BAR --- %>
+    <div class="col-12 mt-5 py-4 border-top text-center bg-light rounded-bottom">
+      <%= f.submit "Update & Recalculate Payroll", class: "btn btn-success btn-lg px-5 shadow-sm" %>
     </div>
   </div>
 <% end %>
@@ -68,16 +130,16 @@
 <script>
   function addManualRow() {
     const list = document.getElementById('manual-deductions-list');
-    const id = new Date().getTime(); // Unique ID for nested attributes
+    const id = new Date().getTime(); 
     const row = `
-      <div class="input-group mb-2 manual-row-item animate__animated animate__fadeInDown">
+      <div class="input-group mb-2 manual-row-item shadow-sm">
         <input type="text" name="payroll[payroll_deductions_attributes][${id}][note]" 
-               placeholder="Description" class="form-control" required>
+               placeholder="Description..." class="form-control" required>
         <span class="input-group-text">₱</span>
         <input type="number" name="payroll[payroll_deductions_attributes][${id}][amount]" 
                step="any" placeholder="0.00" class="form-control" required>
-        <button type="button" class="btn btn-outline-secondary" onclick="this.closest('.manual-row-item').remove()">
-          <i class="bi bi-x"></i>
+        <button type="button" class="btn btn-outline-danger" onclick="this.closest('.manual-row-item').remove()">
+          <i class="bi bi-trash"></i>
         </button>
       </div>
     `;

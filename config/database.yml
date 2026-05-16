@@ -90,14 +90,19 @@ production:
     database: payroll_system_production
     username: payroll_system
     password: <%= ENV["PAYROLL_SYSTEM_DATABASE_PASSWORD"] %>
+    host: <%= ENV["DATABASE_HOST"] || "db" %>   # <--- IMPORTANT: Docker service name
+    port: 5432
+
   cache:
     <<: *primary_production
     database: payroll_system_production_cache
     migrations_paths: db/cache_migrate
+
   queue:
     <<: *primary_production
     database: payroll_system_production_queue
     migrations_paths: db/queue_migrate
+
   cable:
     <<: *primary_production
     database: payroll_system_production_cable

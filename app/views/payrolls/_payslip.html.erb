@@ -1,0 +1,69 @@
+<div class="payslip-container" style="width: 800px; margin: auto; padding: 30px; border: 1px solid #000; font-family: 'Courier New', monospace; background-color: #fff;">
+  
+  <%# 1. TOP LOGO SECTION (SINGLE COLUMN) %>
+  <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px;">
+    <%# Using the dynamic helper we discussed earlier %>
+    <%= image_tag asset_path(company_logo_path(payroll.employee.company)), style: "max-height: 80px; width: auto;" %>
+    <h2 style="margin: 10px 0 0 0; text-transform: uppercase;"><%= payroll.employee.company %></h2>
+    <p style="margin: 0; font-size: 14px;">PAYROLL SLIP</p>
+  </div>
+
+  <%# 2. TWO-COLUMN BODY SECTION %>
+  <div style="display: flex; gap: 30px;">
+    
+    <%# LEFT COLUMN: EARNINGS & INFO %>
+    <div style="flex: 1;">
+      <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+        <tr><td style="padding: 2px 0;"><strong>NAME:</strong></td><td><%= payroll.employee.name %></td></tr>
+        <tr><td style="padding: 2px 0;"><strong>PERIOD:</strong></td><td><%= payroll.start_date %> - <%= payroll.end_date %></td></tr>
+        <tr><td style="padding: 2px 0;"><strong>DAILY RATE:</strong></td><td><%= number_to_currency(payroll.daily_rate, unit: "") %></td></tr>
+        <tr style="border-bottom: 1px dashed #333;"><td style="padding: 2px 0;"><strong>DAYS WORKED:</strong></td><td><%= payroll.days_worked %></td></tr>
+        
+        <tr><td style="padding: 10px 0 2px 0;">BASIC PAY:</td><td align="right"><%= number_to_currency(payroll.basic_pay, unit: "") %></td></tr>
+        <tr><td style="padding: 2px 0;">ALLOWANCE:</td><td align="right"><%= number_to_currency(payroll.allowance, unit: "") %></td></tr>
+        <tr><td style="padding: 2px 0;">OVERTIME PAY:</td><td align="right"><%= number_to_currency(payroll.overtime_pay, unit: "") %></td></tr>
+        <tr><td style="padding: 2px 0;">REST DAY PAY:</td><td align="right"><%= number_to_currency(payroll.rest_day_pay, unit: "") %></td></tr>
+        <tr><td style="padding: 2px 0;">HOLIDAY PAY:</td><td align="right"><%= number_to_currency(payroll.holiday_pay, unit: "") %></td></tr>
+        <tr><td style="padding: 2px 0;">ND PAY:</td><td align="right"><%= number_to_currency(payroll.night_diff_pay, unit: "") %></td></tr>
+        
+        <tr style="border-top: 2px solid #333; font-size: 16px;">
+          <td style="padding: 10px 0;"><strong>GROSS PAY:</strong></td>
+          <td align="right"><strong><%= number_to_currency(payroll.gross_pay, unit: "") %></strong></td>
+        </tr>
+      </table>
+    </div>
+
+    <%# RIGHT COLUMN: DEDUCTIONS (LESS) %>
+    <div style="flex: 1; border-left: 1px solid #ccc; padding-left: 20px;">
+      <table width="100%" style="border-collapse: collapse; font-size: 13px;">
+        <tr><td colspan="2" style="padding-bottom: 10px;"><strong>LESS:</strong></td></tr>
+        <tr><td>SSS:</td><td align="right"><%= number_to_currency(payroll.sss_amount, unit: "") %></td></tr>
+        <tr><td>SSS LOAN:</td><td align="right"><%= number_to_currency(payroll.sss_loan, unit: "") %></td></tr>
+        <tr><td>HDMF:</td><td align="right"><%= number_to_currency(payroll.hdmf_amount, unit: "") %></td></tr>
+        <tr><td>HDMF LOAN:</td><td align="right"><%= number_to_currency(payroll.hdmf_loan, unit: "") %></td></tr>
+        <tr><td>PHIC:</td><td align="right"><%= number_to_currency(payroll.phic_amount, unit: "") %></td></tr>
+        <tr><td>CASH ADVANCE:</td><td align="right"><%= number_to_currency(payroll.cash_advance, unit: "") %></td></tr>
+        <tr><td>RICE:</td><td align="right"><%= number_to_currency(payroll.rice_deduction, unit: "") %></td></tr>
+        <tr><td>MATERIALS:</td><td align="right"><%= number_to_currency(payroll.materials_deduction, unit: "") %></td></tr>
+        <tr><td>GROCERIES:</td><td align="right"><%= number_to_currency(payroll.groceries_deduction, unit: "") %></td></tr>
+        <tr><td>LATE/UT:</td><td align="right"><%= number_to_currency(payroll.late_ut_amount, unit: "") %></td></tr>
+        
+        <tr style="border-top: 1px solid #333; font-weight: bold;">
+          <td style="padding: 10px 0;">TOTAL DEDUCTIONS:</td>
+          <td align="right"><%= number_to_currency(payroll.total_deductions, unit: "") %></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <%# 3. FINAL NET PAY (FULL WIDTH FOOTER) %>
+  <div style="margin-top: 20px; padding: 15px; background-color: #eee; border: 2px solid #333; display: flex; justify-content: space-between; align-items: center;">
+    <span style="font-size: 20px; font-weight: bold;">NET PAY:</span>
+    <span style="font-size: 28px; font-weight: bold;">P <%= number_to_currency(payroll.net_pay, unit: "") %></span>
+  </div>
+
+  <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+    <div style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 12px;">Employee Signature</div>
+    <div style="border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px; font-size: 12px;">Date Received</div>
+  </div>
+</div>

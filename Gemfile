@@ -25,7 +25,9 @@ gem 'google-apis-drive_v3', '~> 0.75.0'
 gem 'googleauth'
 gem 'google-apis-sheets_v4', '~> 0.6.0'
 gem 'pagy', '~> 9.3'
-
+gem 'grover'
+gem 'rubyXL'
+gem 'caxlsx'
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
 

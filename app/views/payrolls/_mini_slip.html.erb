@@ -1,0 +1,42 @@
+<div class="slip-box">
+  <%# 1. Header Column (Logo Center) %>
+  <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 2px;">
+    <%= image_tag asset_path(company_logo_path(payroll.employee.company)), style: "height: 18px;" %>
+    <div style="font-weight: bold; font-size: 8px;"><%= payroll.employee.company.upcase %></div>
+  </div>
+
+  <%# 2. Name & Period %>
+  <div>
+    <strong>NAME:</strong> <%= payroll.employee.name.truncate(25) %><br>
+    <strong>PERIOD:</strong> <%= payroll.start_date.strftime("%m/%d") %>-<%= payroll.end_date.strftime("%m/%d/%y") %>
+  </div>
+
+  <%# 3. Two-Column Data Body %>
+  <div style="display: flex; gap: 5px;">
+    <%# Left side: Earnings %>
+    <div style="flex: 1.2;">
+      RATE: <%= number_to_currency(payroll.daily_rate, unit: "") %> | DAYS: <%= payroll.days_worked %><br>
+      BASIC: <%= number_to_currency(payroll.basic_pay, unit: "") %><br>
+      OT/REST: <%= number_to_currency((payroll.overtime_pay || 0) + (payroll.rest_day_pay || 0), unit: "") %><br>
+      HOLI/ND: <%= number_to_currency((payroll.holiday_pay || 0) + (payroll.night_diff_pay || 0), unit: "") %><br>
+      ALLOW: <%= number_to_currency(payroll.allowance, unit: "") %><br>
+      <strong>GROSS: <%= number_to_currency(payroll.gross_pay, unit: "") %></strong>
+    </div>
+
+    <%# Right side: Deductions (LESS) %>
+    <div style="flex: 1; border-left: 1px solid #eee; padding-left: 4px;">
+      <strong>LESS:</strong><br>
+      SSS/PH/PI: <%= number_to_currency(payroll.total_statutory, unit: "") %><br>
+      LOANS: <%= number_to_currency((payroll.sss_loan || 0) + (payroll.hdmf_loan || 0), unit: "") %><br>
+      CASH ADV: <%= number_to_currency(payroll.cash_advance || 0, unit: "") %><br>
+      RICE/MAT: <%= number_to_currency((payroll.rice_deduction || 0) + (payroll.materials_deduction || 0), unit: "") %><br>
+      GROC/LATE: <%= number_to_currency((payroll.groceries_deduction || 0) + (payroll.late_ut_amount || 0), unit: "") %>
+    </div>
+  </div>
+
+  <%# 4. Final Net Pay Bar %>
+  <div class="bg-dark" style="display: flex; justify-content: space-between; font-size: 11px;">
+    <strong>NET PAY:</strong>
+    <strong>P <%= number_to_currency(payroll.net_pay, unit: "") %></strong>
+  </div>
+</div>

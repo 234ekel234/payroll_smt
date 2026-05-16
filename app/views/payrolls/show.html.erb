@@ -1,11 +1,12 @@
 <div class="container mt-5 mb-5">
-  <div class="d-print-none d-flex justify-content-between mb-4">
+  <%# --- HEADER NAVIGATION --- %>
+  <div class="d-flex justify-content-between mb-4 d-print-none">
     <%= link_to payrolls_path, class: "btn btn-secondary shadow-sm" do %>
       <i class="bi bi-arrow-left"></i> Back to Payrolls
     <% end %>
-    <button onclick="window.print();" class="btn btn-primary shadow-sm">
-      <i class="bi bi-printer"></i> Print Payslip
-    </button>
+    <%= link_to edit_payroll_path(@payroll), class: "btn btn-outline-primary shadow-sm" do %>
+      <i class="bi bi-pencil"></i> Edit Record
+    <% end %>
   </div>
 
   <div class="card shadow-sm border-0 mx-auto" style="max-width: 850px;">
@@ -31,7 +32,6 @@
         dtr_ids = @payroll.daily_time_records.pluck(:id)
         slices  = TimeSlice.where(daily_time_record_id: dtr_ids)
         
-        # Breakdown of minutes
         h_mins   = slices.where(holiday: true).sum(:minutes)
         rd_mins  = slices.where(rest_day: true, holiday: false).sum(:minutes)
         ot_mins  = slices.where(overtime: true, holiday: false, rest_day: false).sum(:minutes)
@@ -121,23 +121,50 @@
         <%# --- DEDUCTIONS COLUMN --- %>
         <div class="col-md-6">
           <h6 class="fw-bold border-bottom pb-2 text-uppercase small text-muted">Deductions Breakdown</h6>
+          
+          <%# Quick Fix: Combine hardcoded schema columns into a list %>
+          <% 
+            fixed_deductions = [
+              { name: "SSS Contribution", val: @payroll.sss_amount },
+              { name: "PhilHealth",       val: @payroll.phic_amount },
+              { name: "Pag-IBIG (HDMF)",  val: @payroll.hdmf_amount },
+              { name: "SSS Loan",         val: @payroll.sss_loan },
+              { name: "Pag-IBIG Loan",    val: @payroll.hdmf_loan },
+              { name: "Cash Advance",     val: @payroll.cash_advance },
+              { name: "Rice Deduction",   val: @payroll.rice_deduction },
+              { name: "Groceries Ded.",   val: @payroll.groceries_deduction },
+              { name: "Materials Ded.",   val: @payroll.materials_deduction },
+              { name: "Late/Undertime",   val: @payroll.late_ut_amount }
+            ]
+          %>
+
+          <%# Render Fixed Deductions %>
+          <% fixed_deductions.each do |item| %>
+            <% if item[:val].to_f > 0 %>
+              <div class="d-flex justify-content-between mb-2">
+                <span class="small fw-bold text-dark"><%= item[:name] %></span>
+                <span class="text-danger small fw-semibold">- <%= number_to_currency(item[:val], unit: "₱") %></span>
+              </div>
+            <% end %>
+          <% end %>
+
+          <%# Render Dynamic/Miscellaneous Deductions %>
           <% if @payroll.payroll_deductions.any? %>
             <% @payroll.payroll_deductions.each do |pd| %>
               <div class="d-flex justify-content-between mb-2">
                 <div>
-                  <%# Pulling the name from the Master Record (Deduction table) %>
-                  <span class="d-block small fw-bold text-dark"><%= pd.deduction&.name || "Deduction" %></span>
-                  
-                  <%# Only show note if it's not the same as the name %>
-                  <% if pd.note.present? && pd.note != pd.deduction&.name %>
-                    <small class="text-muted d-block" style="font-size: 0.7rem;"><%= pd.note %></small>
-                  <% end %>
+                  <span class="d-block small fw-bold text-dark">
+                    <%= pd.deduction.present? ? pd.deduction.name : (pd.note.presence || "Manual Adjustment") %>
+                  </span>
                 </div>
                 <span class="text-danger small fw-semibold">- <%= number_to_currency(pd.amount || 0, unit: "₱") %></span>
               </div>
             <% end %>
-          <% else %>
-            <div class="text-muted small italic py-2 text-center">No deductions applied for this period.</div>
+          <% end %>
+
+          <%# Fallback Message %>
+          <% if @payroll.total_deductions.to_f == 0 && !@payroll.payroll_deductions.any? %>
+            <div class="text-muted small italic py-2 text-center">No deductions applied.</div>
           <% end %>
 
           <div class="d-flex justify-content-between fw-bold pt-2 border-top mt-3 text-danger p-2">
@@ -152,18 +179,6 @@
         <h6 class="text-uppercase small mb-1 opacity-75">Net Take Home Pay</h6>
         <h1 class="display-4 fw-bold mb-0"><%= number_to_currency(@payroll.net_pay || 0, unit: "₱") %></h1>
         <small class="opacity-50">Generated on: <%= Time.current.strftime("%m/%d/%Y %I:%M %p") %></small>
-      </div>
-      
-      <%# --- SIGNATURE SECTION --- %>
-      <div class="row mt-5 pt-4 border-top">
-        <div class="col-6">
-          <div class="border-bottom border-dark w-75 mb-1"></div>
-          <small class="text-muted">Employee Signature</small>
-        </div>
-        <div class="col-6 text-end">
-          <div class="border-bottom border-dark w-75 ms-auto mb-1"></div>
-          <small class="text-muted">Authorized By</small>
-        </div>
       </div>
     </div>
   </div>

@@ -1,112 +1,180 @@
 class PayrollsController < ApplicationController
-  # Uses find_by safety logic in set_payroll
   before_action :set_payroll, only: %i[show edit update destroy]
+  before_action :set_date_filters, only: %i[index bulk_print download_summary]
 
   def index
-    # Added pagination-ready includes to prevent N+1 queries
-    @payrolls = Payroll.includes(:employee, :payroll_deductions).order(start_date: :desc)
+    @payrolls = fetch_filtered_payrolls
+    @companies = Employee.distinct.pluck(:company).compact.sort
+    
+    respond_to do |format|
+      format.html
+      format.xlsx { send_summary_excel }
+    end
   end
 
   def show
-    # @payroll is set by before_action
-  end
+    @payroll = Payroll.includes(payroll_deductions: :deduction).find(params[:id])
 
-  def new
-    @payroll = Payroll.new
-  end
-
-  def edit
-  end
-
-  def create
-    @payroll = Payroll.new(payroll_params)
-
-    # Wrap in a transaction: If deductions fail, the payroll won't save at all
-    ActiveRecord::Base.transaction do
-      if @payroll.save
-        apply_statutory_deductions(@payroll)
-        redirect_to @payroll, notice: "Payroll was successfully created."
-      else
-        render :new, status: :unprocessable_entity
-        raise ActiveRecord::Rollback # Prevents saving if validations fail
+    respond_to do |format|
+      format.html
+      format.pdf do
+        html = render_to_string(template: 'payrolls/show', layout: 'pdf', formats: [:html])
+        grover = Grover.new(html, format: 'A4', print_background: true)
+        send_data grover.to_pdf, 
+                  filename: "Payslip_#{@payroll.employee.name.parameterize}.pdf", 
+                  type: 'application/pdf', 
+                  disposition: 'inline'
       end
     end
   end
 
-  def update
-    ActiveRecord::Base.transaction do
-      if @payroll.update(payroll_params)
-        apply_statutory_deductions(@payroll)
-        redirect_to @payroll, notice: "Payroll was successfully updated.", status: :see_other
-      else
-        render :edit, status: :unprocessable_entity
-        raise ActiveRecord::Rollback
-      end
-    end
-  end
-
-  def destroy
-    @payroll.destroy!
-    redirect_to payrolls_path, notice: "Payroll was successfully destroyed.", status: :see_other
-  end
-
-  # POST /payrolls/generate
   def generate
-    # 1. Capture dates & provide defaults
-    start_date = params[:start_date]&.to_date || Date.today.beginning_of_month
-    end_date   = params[:end_date]&.to_date   || Date.today.end_of_month
-    
-    # 2. Prevent duplicate payrolls for the same period
-    existing = Payroll.where(start_date: start_date, end_date: end_date).exists?
-    if existing && params[:force] != "true"
-      return redirect_to payrolls_path, alert: "Payroll for this period already exists. Delete existing records first or use Force Generate."
+    start_date = params[:start_date].presence&.to_date || Date.today.beginning_of_month
+    end_date   = params[:end_date].presence&.to_date   || Date.today.end_of_month
+    selected_companies = params[:companies]
+
+    if selected_companies.blank?
+      redirect_to payrolls_path, alert: "Please select at least one company to process." and return
     end
 
-    # 3. Instantiate the Generator Service
+    employees_to_process = Employee.where(active: true, company: selected_companies)
+
+    if params[:landbank_atm].present?
+      employees_to_process = employees_to_process.where(landbank_atm: params[:landbank_atm] == "true")
+    end
+
+    if employees_to_process.empty?
+      redirect_to payrolls_path, alert: "No employees match the selected criteria." and return
+    end
+
     generator = PayrollGenerator.new(
       start_date:    start_date, 
       end_date:      end_date, 
-      employees:     Employee.where(active: true),
+      employees:     employees_to_process,
       deduction_ids: params[:deduction_ids] || [],
+      custom_amounts: params[:custom_amounts],
       sss:           params[:apply_sss] == "1",
       ph:            params[:apply_ph]  == "1",
       pi:            params[:apply_pi]  == "1"
     )
 
     if generator.generate!
-      redirect_to payrolls_path, notice: "Batch payroll generated successfully for active employees."
+      redirect_to payrolls_path(start_date: start_date, end_date: end_date), 
+                  notice: "Generated payroll for #{employees_to_process.count} employees."
     else
-      redirect_to payrolls_path, alert: "Error during batch generation. Check logs for details."
+      redirect_to payrolls_path, alert: "Error during batch generation."
     end
+  end
+
+  def bulk_print
+    @payrolls = fetch_filtered_payrolls
+
+    if @payrolls.empty?
+      redirect_to payrolls_path, alert: "No payroll records found for the selected filters." and return
+    end
+
+    respond_to do |format|
+      format.pdf do
+        html = render_to_string(template: 'payrolls/bulk_print', layout: 'pdf', formats: [:html])
+        grover = Grover.new(html, 
+          format: 'A4',
+          margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' },
+          print_background: true
+        )
+        send_data grover.to_pdf, 
+                  filename: "Bulk_Payslips_#{@start_date}.pdf", 
+                  type: 'application/pdf', 
+                  disposition: 'inline'
+      end
+
+      format.xlsx do
+        selected_companies = Array(params[:companies])
+        
+        # 1. Determine which Template File to load.
+        # If one company is selected, we try to load its specific .xlsx file.
+        # Otherwise, we load the 'default' template file.
+        template_key = selected_companies.size == 1 ? selected_companies.first : "default"
+
+        # 2. Initialize the generator.
+        # We pass template_key so it knows which FILE to open.
+        # The generator will look at each individual payroll record to determine the PRINTED name.
+        generator = ExcelPayrollGenerator.new(@payrolls, template_key)
+        workbook = generator.generate
+        
+        send_data workbook.stream.read, 
+                  filename: "Bulk_Payslips_#{@start_date}.xlsx", 
+                  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      end
+    end
+  end
+
+  def download_summary
+    @payrolls = fetch_filtered_payrolls
+    send_summary_excel
+  end
+
+  def update
+    if @payroll.update(payroll_params)
+      @payroll.calculate_final_amounts!
+      redirect_to @payroll, notice: "Payroll updated successfully."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @payroll.destroy!
+    redirect_to payrolls_path, notice: "Payroll deleted.", status: :see_other
   end
 
   private
 
-  # SAFETY FIX: Prevents ActiveRecord::RecordNotFound (ID 255) crashes
   def set_payroll
-    @payroll = Payroll.find_by(id: params[:id])
-    
-    if @payroll.nil?
-      redirect_to payrolls_path, alert: "Error: Payroll record ##{params[:id]} could not be found. It may have been deleted."
-    end
+    @payroll = Payroll.includes(payroll_deductions: :deduction).find_by(id: params[:id])
+    redirect_to payrolls_path, alert: "Payroll not found." if @payroll.nil?
   end
 
-  # Helper to dry up the deduction logic in Create/Update
-  def apply_statutory_deductions(payroll)
-    payroll.apply_all_deductions(
-      standard_ids: params[:payroll][:deduction_ids],
-      sss: params[:apply_sss] == "1",
-      ph:  params[:apply_ph]  == "1",
-      pi:  params[:apply_pi]  == "1"
-    )
+  def set_date_filters
+    @start_date = params[:start_date].presence || Date.today.beginning_of_month.to_s
+    @end_date   = params[:end_date].presence   || Date.today.end_of_month.to_s
+  end
+
+  def fetch_filtered_payrolls
+    query = Payroll.includes(:employee, payroll_deductions: :deduction)
+                   .where(start_date: @start_date..@end_date)
+
+    if params[:companies].present?
+      query = query.joins(:employee).where(employees: { company: params[:companies] })
+    end
+
+    if params[:landbank_atm].present?
+      query = query.joins(:employee).where(employees: { landbank_atm: params[:landbank_atm] == "true" })
+    end
+
+    query.order("employees.name ASC")
+  end
+
+  def send_summary_excel
+    display_name = Array(params[:companies]).size == 1 ? params[:companies].first : "Multiple Companies"
+    period_label = "#{@start_date} to #{@end_date}"
+
+    generator = ExcelSummaryGenerator.new(@payrolls, period_label, display_name)
+    workbook = generator.generate
+
+    send_data workbook.stream.read, 
+              filename: "Payroll_Summary_#{@start_date}.xlsx", 
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
   def payroll_params
     params.require(:payroll).permit(
       :employee_id, :start_date, :end_date, :daily_rate, :days_worked,
       :allowance, :basic_pay, :overtime_pay, :rest_day_pay, :holiday_pay,
-      :night_diff_pay, :gross_pay, :total_deductions, :net_pay,
-      :processed_at, :status
+      :night_diff_pay, :gross_pay, :total_deductions, :net_pay, :status,
+      :sss_amount, :phic_amount, :hdmf_amount, :sss_loan, :hdmf_loan,
+      :cash_advance, :rice_deduction, :materials_deduction, :groceries_deduction, :late_ut_amount,
+      :deduction_ids => [], 
+      :payroll_deductions_attributes => [:id, :note, :amount, :_destroy]
     )
   end
 end

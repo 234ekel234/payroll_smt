@@ -5,66 +5,157 @@
       <h1 class="h2 mb-1"><i class="bi bi-wallet2 text-primary"></i> Payroll Records</h1>
       <p class="text-muted mb-0">Batch generate payroll or manage individual audit-ready snapshots.</p>
     </div>
-    <%= link_to deductions_path, class: "btn btn-outline-secondary shadow-sm" do %>
-      <i class="bi bi-gear-wide-connected"></i> Configure Master Deductions
-    <% end %>
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#batchGenerator">
+        <i class="bi bi-plus-circle me-1"></i> New Payroll Batch
+      </button>
+      
+      <%= link_to deductions_path, class: "btn btn-outline-secondary shadow-sm" do %>
+        <i class="bi bi-gear-wide-connected"></i> Deduction Settings
+      <% end %>
+    </div>
   </div>
 
-  <%# BATCH GENERATOR CARD %>
-  <div class="card mb-4 border-primary shadow-sm">
-    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-      <h5 class="card-title mb-0"><i class="bi bi-gear-fill me-2"></i>Batch Payroll Generator</h5>
-      <span class="badge bg-white text-primary">2026 Statutory Ready</span>
-    </div>
-    <div class="card-body bg-light">
-      <%= form_with url: generate_payrolls_path, method: :post do |f| %>
-        <div class="row g-3">
-          <%# 1. Date Selectors %>
-          <div class="col-md-2">
-            <%= f.label :start_date, "Cut-off Start", class: "form-label fw-bold small text-uppercase" %>
-            <%= f.date_field :start_date, value: Date.today.beginning_of_month, class: "form-control" %>
-          </div>
-          <div class="col-md-2">
-            <%= f.label :end_date, "Cut-off End", class: "form-label fw-bold small text-uppercase" %>
-            <%= f.date_field :end_date, value: Date.today.end_of_month, class: "form-control" %>
-          </div>
+  <%# BATCH GENERATOR CARD (Collapsible) %>
+  <div class="collapse" id="batchGenerator">
+    <div class="card mb-4 border-primary shadow-sm">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="bi bi-gear-fill me-2"></i>Batch Payroll Generator</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-toggle="collapse" data-bs-target="#batchGenerator"></button>
+      </div>
+      <div class="card-body bg-light">
+        <%= form_with url: generate_payrolls_path, method: :post do |f| %>
+          <div class="row g-3">
+            <%# 1. DATE FILTERS %>
+            <div class="col-md-3">
+              <%= f.label :start_date, "Cut-off Start", class: "form-label fw-bold small text-uppercase" %>
+              <%= f.date_field :start_date, value: @start_date, class: "form-control shadow-sm" %>
+            </div>
+            <div class="col-md-3">
+              <%= f.label :end_date, "Cut-off End", class: "form-label fw-bold small text-uppercase" %>
+              <%= f.date_field :end_date, value: @end_date, class: "form-control shadow-sm" %>
+            </div>
 
-          <%# 2. Statutory Toggles (Auto-Math) %>
-          <div class="col-md-4 border-start border-end px-4">
-            <label class="form-label fw-bold small text-uppercase text-primary"><i class="bi bi-bank"></i> Statutory Contributions</label>
-            <div class="d-flex flex-wrap gap-3 mt-1">
-              <div class="form-check form-switch">
-                <%= f.check_box :apply_sss, { class: "form-check-input", checked: true }, "1", "0" %>
-                <%= f.label :apply_sss, "SSS", class: "form-check-label fw-bold" %>
-              </div>
-              <div class="form-check form-switch">
-                <%= f.check_box :apply_ph, { class: "form-check-input", checked: true }, "1", "0" %>
-                <%= f.label :apply_ph, "PhilHealth", class: "form-check-label fw-bold" %>
-              </div>
-              <div class="form-check form-switch">
-                <%= f.check_box :apply_pi, { class: "form-check-input", checked: true }, "1", "0" %>
-                <%= f.label :apply_pi, "Pag-IBIG", class: "form-check-label fw-bold" %>
+            <%# 2. STATUTORY SWITCHES %>
+            <div class="col-md-6 border-start ps-4">
+              <label class="form-label fw-bold small text-uppercase text-primary"><i class="bi bi-bank"></i> Statutory Contributions</label>
+              <div class="d-flex flex-wrap gap-3 mt-1">
+                <div class="form-check form-switch">
+                  <%= f.check_box :apply_sss, { class: "form-check-input", checked: true }, "1", "0" %>
+                  <%= f.label :apply_sss, "SSS", class: "form-check-label fw-bold" %>
+                </div>
+                <div class="form-check form-switch">
+                  <%= f.check_box :apply_ph, { class: "form-check-input", checked: true }, "1", "0" %>
+                  <%= f.label :apply_ph, "PhilHealth", class: "form-check-label fw-bold" %>
+                </div>
+                <div class="form-check form-switch">
+                  <%= f.check_box :apply_pi, { class: "form-check-input", checked: true }, "1", "0" %>
+                  <%= f.label :apply_pi, "Pag-IBIG", class: "form-check-label fw-bold" %>
+                </div>
               </div>
             </div>
-            <small class="text-muted d-block mt-1">Calculates based on 2026 Gov. Brackets.</small>
-          </div>
 
-          <%# 3. Master Deductions Checklist %>
-          <div class="col-md-4">
-            <label class="form-label fw-bold small text-uppercase text-secondary">Company Deductions</label>
-            <div class="p-2 border rounded bg-white overflow-auto" style="max-height: 85px;">
-              <%= f.collection_check_boxes :deduction_ids, Deduction.where(active: true).where.not(category: "Government"), :id, :name do |b| %>
-                <div class="form-check form-check-inline">
-                  <%= b.check_box(class: "form-check-input") %>
-                  <%= b.label(class: "form-check-label small") %>
+            <%# 3. STANDARD DEDUCTIONS WITH CUSTOM INPUTS %>
+            <div class="col-md-12 border-top pt-3 mt-3">
+              <label class="form-label fw-bold small text-uppercase text-primary">
+                <i class="bi bi-list-check"></i> Select Standard Deductions & Set Batch Amounts
+              </label>
+              <div class="row g-2 p-3 border rounded bg-white shadow-sm mx-0">
+                <% Deduction.where(active: true).where.not("name ILIKE ANY (array['%SSS%', '%PHIC%', '%PhilHealth%', '%Pag-IBIG%', '%HDMF%'])").each do |deduction| %>
+                  <div class="col-md-4 col-lg-3">
+                    <div class="input-group input-group-sm mb-2 shadow-sm">
+                      <div class="input-group-text bg-light border-end-0">
+                        <%= check_box_tag "deduction_ids[]", deduction.id, true, class: "form-check-input mt-0", id: "deduction_#{deduction.id}" %>
+                      </div>
+                      <span class="input-group-text flex-grow-1 bg-white small fw-semibold text-truncate" title="<%= deduction.name %>">
+                        <%= deduction.name %>
+                      </span>
+                      <%= number_field_tag "custom_amounts[#{deduction.id}]", 
+                                           number_with_precision(deduction.amount, precision: 2, delimiter: ''), 
+                                           step: :any, 
+                                           class: "form-control text-end fw-bold text-primary", 
+                                           style: "width: 90px;", 
+                                           placeholder: "0.00" %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <%# 4. TARGETING %>
+            <div class="col-md-12 border-top pt-3 mt-3">
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <label class="form-label fw-bold small text-uppercase text-primary mb-2 d-block">Target Companies</label>
+                  <div class="d-flex flex-wrap gap-2 p-3 border rounded bg-white shadow-sm" style="max-height: 150px; overflow-y: auto;">
+                    <% Employee.pluck(:company).compact.uniq.sort.each do |company_name| %>
+                      <div class="form-check form-check-inline">
+                        <%= check_box_tag "companies[]", company_name, false, class: "form-check-input", id: "gen_company_#{company_name.parameterize}" %>
+                        <%= label_tag "gen_company_#{company_name.parameterize}", company_name, class: "form-check-label small fw-semibold" %>
+                      </div>
+                    <% end %>
+                  </div>
                 </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-bold small text-uppercase text-primary mb-2 d-block">ATM Status</label>
+                  <div class="p-3 border rounded bg-white shadow-sm">
+                    <%= f.select :landbank_atm, [["All Employees", ""], ["Landbank ATM Only", "true"], ["Manual / Cash Only", "false"]], {}, { class: "form-select form-select-sm" } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 mt-4 text-end">
+              <%= f.button type: :submit, class: "btn btn-primary px-5 shadow-sm", data: { turbo_confirm: "Start generating payroll?" } do %>
+                <i class="bi bi-calculator me-2"></i>Run Batch Generation
               <% end %>
             </div>
           </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
 
-          <div class="col-12 mt-3 text-end">
-            <%= f.button type: :submit, class: "btn btn-primary px-5 shadow-sm", data: { turbo_confirm: "This will regenerate all 'Draft' payrolls for the selected dates. Existing snapshots will be replaced. Proceed?" } do %>
-              <i class="bi bi-calculator me-2"></i>Run Batch Generation
+  <%# FILTER & TOOLBAR %>
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body p-3">
+      <%= form_with url: payrolls_path, method: :get, class: "row g-3 align-items-end" do |f| %>
+        <div class="col-md-9">
+          <label class="form-label fw-bold small text-muted text-uppercase mb-2">Filter by Companies</label>
+          <div class="d-flex flex-wrap gap-2 p-2 border rounded bg-light-subtle shadow-sm">
+            <% Employee.pluck(:company).compact.uniq.sort.each do |company_name| %>
+              <div class="form-check form-check-inline mb-0">
+                <%= check_box_tag "companies[]", company_name, (params[:companies]&.include?(company_name)), class: "form-check-input", id: "filter_company_#{company_name.parameterize}" %>
+                <%= label_tag "filter_company_#{company_name.parameterize}", company_name, class: "form-check-label small fw-semibold" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-muted text-uppercase mb-2">Payment Method</label>
+          <%= f.select :landbank_atm, [["All Methods", ""], ["Landbank ATM", "true"], ["Manual/Cash", "false"]], { selected: params[:landbank_atm] }, { class: "form-select shadow-sm" } %>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-muted text-uppercase">Start Date</label>
+          <%= f.date_field :start_date, value: @start_date, class: "form-control shadow-sm" %>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold small text-muted text-uppercase">End Date</label>
+          <%= f.date_field :end_date, value: @end_date, class: "form-control shadow-sm" %>
+        </div>
+
+        <div class="col-md-6 text-end">
+          <div class="btn-group shadow-sm w-100">
+            <%= f.button type: :submit, class: "btn btn-dark px-4" do %>
+              <i class="bi bi-funnel"></i> Apply Filter
+            <% end %>
+            <%= link_to bulk_print_payrolls_path(start_date: @start_date, end_date: @end_date, companies: params[:companies], landbank_atm: params[:landbank_atm], format: :xlsx), class: "btn btn-success" do %>
+              <i class="bi bi-file-earmark-excel"></i> Export Slips
+            <% end %>
+            <%= link_to download_summary_payrolls_path(start_date: @start_date, end_date: @end_date, companies: params[:companies], landbank_atm: params[:landbank_atm]), class: "btn btn-success" do %>
+              <i class="bi bi-table"></i> Download Summary
             <% end %>
           </div>
         </div>
@@ -78,76 +169,58 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="table-light text-nowrap">
           <tr>
-            <th class="ps-3">Employee</th>
+            <th class="ps-3">Employee / Company</th>
+            <th class="text-center">Bank</th>
             <th>Period</th>
             <th class="text-end">Gross Pay</th>
             <th class="text-end text-danger">Deductions</th>
             <th class="text-end fw-bold">Net Pay</th>
-            <th class="text-center">Status</th>
             <th class="text-end pe-3">Actions</th>
           </tr>
         </thead>
         <tbody>
           <% if @payrolls.any? %>
             <% @payrolls.each do |payroll| %>
-              <tr class="<%= 'opacity-75 bg-light' if payroll.status == 'draft' %>">
+              <tr>
                 <td class="ps-3">
-                  <div class="fw-bold"><%= payroll.employee.name %></div>
-                  <small class="text-muted text-uppercase" style="font-size: 0.75rem;">ID: <%= payroll.employee.person_id %></small>
+                  <div class="fw-bold text-primary"><%= payroll.employee.name %></div>
+                  <span class="badge bg-secondary-subtle text-secondary small" style="font-size: 0.65rem;"><%= payroll.employee.company %></span>
                 </td>
-                <td>
-                  <span class="small text-nowrap">
-                    <%= payroll.start_date&.strftime("%b %d") %> - <%= payroll.end_date&.strftime("%b %d") %>
-                  </span>
-                </td>
-                <td class="text-end fw-semibold"><%= number_to_currency(payroll.gross_pay || 0, unit: "₱") %></td>
-                
-                <%# Deduction Tooltip Snapshot %>
-                <td class="text-end text-danger">
-                  <% deduction_details = payroll.payroll_deductions.map { |pd| "#{pd.deduction&.name}: ₱#{number_with_precision(pd.amount, precision: 2)}" }.join("\n") %>
-                  <span title="<%= deduction_details %>" style="cursor: help; border-bottom: 1px dashed #dc3545;" data-bs-toggle="tooltip" data-bs-placement="top">
-                    -<%= number_to_currency(payroll.total_deductions || 0, unit: "₱") %>
-                  </span>
-                </td>
-                
-                <td class="text-end fw-bold text-success"><%= number_to_currency(payroll.net_pay || 0, unit: "₱") %></td>
-                
                 <td class="text-center">
-                  <% if payroll.status == 'processed' %>
-                    <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3">PAID</span>
+                  <% if payroll.employee.landbank_atm %>
+                    <i class="bi bi-credit-card-2-front-fill text-info" title="Landbank ATM"></i>
                   <% else %>
-                    <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning px-3">DRAFT</span>
+                    <i class="bi bi-cash-stack text-muted" title="Manual Payment"></i>
                   <% end %>
                 </td>
+                <td>
+                  <span class="small text-nowrap badge bg-light text-dark border">
+                    <%= payroll.start_date&.strftime("%b %d") %> - <%= payroll.end_date&.strftime("%b %d, %Y") %>
+                  </span>
+                </td>
+                <td class="text-end fw-semibold">₱<%= number_with_precision(payroll.gross_pay, precision: 2) %></td>
+                <td class="text-end text-danger">-₱<%= number_with_precision(payroll.total_deductions, precision: 2) %></td>
+                <td class="text-end fw-bold text-success">₱<%= number_with_precision(payroll.net_pay, precision: 2) %></td>
                 
-                <%# CLEAR, LABELED ACTION BUTTONS %>
                 <td class="text-end pe-3">
-                  <div class="d-flex justify-content-end gap-2">
-                    <%= link_to payroll_path(payroll), class: "btn btn-sm btn-info text-white d-inline-flex align-items-center px-2 shadow-sm" do %>
-                      <i class="bi bi-eye-fill me-1"></i> View
-                    <% end %>
-
-                    <%= link_to edit_payroll_path(payroll), class: "btn btn-sm btn-warning text-dark d-inline-flex align-items-center px-2 shadow-sm" do %>
-                      <i class="bi bi-pencil-fill me-1"></i> Edit
-                    <% end %>
-
-                    <%= button_to payroll_path(payroll), 
-                        method: :delete, 
-                        class: "btn btn-sm btn-danger d-inline-flex align-items-center px-2 shadow-sm", 
-                        form: { data: { turbo_confirm: "Permanently delete the payroll record for #{payroll.employee.name}?\n\nThis cannot be undone." } } do %>
-                      <i class="bi bi-trash-fill me-1"></i> Delete
+                  <div class="d-flex justify-content-end align-items-center gap-2 flex-nowrap">
+                    <div class="btn-group btn-group-sm shadow-sm">
+                      <%= link_to payroll_path(payroll), class: "btn btn-outline-secondary" do %>
+                        <i class="bi bi-eye"></i> View
+                      <% end %>
+                      <%= link_to edit_payroll_path(payroll), class: "btn btn-outline-secondary" do %>
+                        <i class="bi bi-pencil"></i> Edit
+                      <% end %>
+                    </div>
+                    <%= button_to payroll_path(payroll), method: :delete, class: "btn btn-sm btn-outline-danger shadow-sm d-inline-flex align-items-center", form: { data: { turbo_confirm: "Are you sure you want to delete this payroll record?" } } do %>
+                      <i class="bi bi-trash"></i>
                     <% end %>
                   </div>
                 </td>
               </tr>
             <% end %>
           <% else %>
-            <tr>
-              <td colspan="7" class="text-center py-5 text-muted italic">
-                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-                No payroll records found. Adjust dates and click "Run Batch Generation" to start.
-              </td>
-            </tr>
+            <tr><td colspan="7" class="text-center py-5 text-muted">No records found for this period.</td></tr>
           <% end %>
         </tbody>
       </table>

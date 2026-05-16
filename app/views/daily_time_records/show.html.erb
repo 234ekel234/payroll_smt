@@ -1,4 +1,5 @@
 <div class="container mt-4">
+  <%# Header Section %>
   <div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-3">
     <div>
       <h1 class="h3 mb-1">Daily Time Record</h1>
@@ -14,6 +15,7 @@
 
   <div class="row">
     <div class="col-lg-4">
+      <%# Employee Card %>
       <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-primary text-white py-3">
           <h5 class="card-title mb-0">Employee Context</h5>
@@ -26,7 +28,7 @@
           <div class="row mb-3">
             <div class="col-6">
               <small class="text-muted d-block">Standard Shift</small>
-              <span><%= @daily_time_record.employee.shift_start.strftime("%I:%M %p") %> - <%= @daily_time_record.employee.shift_end.strftime("%I:%M %p") %></span>
+              <span class="small"><%= @daily_time_record.employee.shift_start.strftime("%I:%M %p") %> - <%= @daily_time_record.employee.shift_end.strftime("%I:%M %p") %></span>
             </div>
             <div class="col-6">
               <small class="text-muted d-block">Hourly Rate</small>
@@ -36,25 +38,30 @@
           <hr>
           <div class="mb-2 d-flex justify-content-between">
             <span class="text-muted">Clock In:</span>
-            <span class="badge bg-light text-dark border"><%= @daily_time_record.clock_in&.strftime("%I:%M %p") || "-" %></span>
+            <span class="badge bg-light text-dark border fw-normal"><%= @daily_time_record.clock_in&.strftime("%I:%M %p") || "-" %></span>
           </div>
           <div class="mb-2 d-flex justify-content-between">
             <span class="text-muted">Clock Out:</span>
-            <span class="badge bg-light text-dark border"><%= @daily_time_record.clock_out&.strftime("%I:%M %p") || "-" %></span>
+            <span class="badge bg-light text-dark border fw-normal"><%= @daily_time_record.clock_out&.strftime("%I:%M %p") || "-" %></span>
           </div>
         </div>
       </div>
 
+      <%# Fixed Summary of Hours Section %>
       <div class="card shadow-sm border-0">
         <div class="card-body p-0">
           <table class="table mb-0">
-            <tr class="table-light"><th colspan="2" class="px-3">Summary of Hours</th></tr>
-            <% [
-              ["Total Work", @daily_time_record.total_work_minutes, "text-dark"],
-              ["Overtime", @daily_time_record.overtime_minutes, "text-primary"],
-              ["Holiday", @daily_time_record.holiday_minutes, "text-warning-emphasis"],
-              ["Late", @daily_time_record.late_minutes, "text-danger"]
-            ].each do |label, mins, css| %>
+            <tr class="table-light"><th colspan="2" class="px-3 py-2">Summary of Hours</th></tr>
+            <% 
+              # Dynamically sum slices to ensure accuracy against the detail table
+              summary_items = [
+                ["Total Work", @daily_time_record.time_slices.sum(:minutes), "text-dark"],
+                ["Overtime", @daily_time_record.time_slices.where(overtime: true).sum(:minutes), "text-primary"],
+                ["Holiday", @daily_time_record.time_slices.where(holiday: true).sum(:minutes), "text-warning-emphasis"],
+                ["Late", @daily_time_record.late_minutes, "text-danger"]
+              ]
+            %>
+            <% summary_items.each do |label, mins, css| %>
               <tr>
                 <td class="px-3 <%= css %>"><%= label %></td>
                 <td class="text-end px-3 fw-bold <%= css %>">
@@ -69,6 +76,7 @@
     </div>
 
     <div class="col-lg-8">
+      <%# Detailed Slices Table %>
       <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3">
           <h5 class="card-title mb-0">Detailed Time Slices</h5>
@@ -86,37 +94,42 @@
               </tr>
             </thead>
             <tbody>
-              <% @daily_time_record.time_slices.each_with_index do |slice, idx| %>
-                <tr>
-                  <td class="ps-3 text-muted"><%= idx + 1 %></td>
-                  <td>
-                    <div class="fw-bold"><%= slice.start_time.strftime("%I:%M %p") %> - <%= slice.end_time.strftime("%I:%M %p") %></div>
-                  </td>
-                  <td class="text-center fw-bold">
-                    <% h, m = slice.minutes.to_i.divmod(60) %>
-                    <%= "#{h}h " if h > 0 %><%= "#{m}m" %>
-                  </td>
-                  <td>
-                    <div class="d-flex flex-wrap gap-1">
-                      <% if slice.night_diff %><span class="badge bg-secondary" style="font-size: 0.65rem;">NIGHT</span><% end %>
-                      <% if slice.overtime %><span class="badge bg-primary" style="font-size: 0.65rem;">OT</span><% end %>
-                      <% if slice.holiday %><span class="badge bg-warning text-dark" style="font-size: 0.65rem;">HOLIDAY</span><% end %>
-                      <% if slice.rest_day %><span class="badge bg-success" style="font-size: 0.65rem;">REST DAY</span><% end %>
-                    </div>
-                  </td>
-                  <td class="text-end pe-3">
-                    <%# Base Multiplier %>
-                    <span class="fw-bold text-dark">x<%= number_with_precision(slice.multiplier_percent / 100.0, precision: 2) %></span>
-                    
-                    <%# Additive Night Indicator %>
-                    <% if slice.night_diff %>
-                      <div class="text-secondary fw-bold" style="font-size: 0.75rem;">
-                        <i class="bi bi-plus-circle-fill"></i> 10% Night
+              <% if @daily_time_record.time_slices.any? %>
+                <% @daily_time_record.time_slices.order(:start_time).each_with_index do |slice, idx| %>
+                  <tr>
+                    <td class="ps-3 text-muted"><%= idx + 1 %></td>
+                    <td>
+                      <div class="fw-bold text-nowrap">
+                        <%= slice.start_time.strftime("%I:%M %p") %> – <%= slice.end_time.strftime("%I:%M %p") %>
                       </div>
-                    <% end %>
-
-                    <small class="text-muted d-block" style="font-size: 0.7rem;"><%= slice.multiplier_code %></small>
-                  </td>
+                    </td>
+                    <td class="text-center fw-bold">
+                      <% h, m = slice.minutes.to_i.divmod(60) %>
+                      <%= "#{h}h " if h > 0 %><%= "#{m}m" %>
+                    </td>
+                    <td>
+                      <div class="d-flex flex-wrap gap-1">
+                        <% if slice.night_diff %><span class="badge bg-secondary" style="font-size: 0.65rem;">NIGHT</span><% end %>
+                        <% if slice.overtime %><span class="badge bg-primary" style="font-size: 0.65rem;">OT</span><% end %>
+                        <% if slice.holiday %><span class="badge bg-warning text-dark" style="font-size: 0.65rem;">HOLIDAY</span><% end %>
+                        <% if slice.rest_day %><span class="badge bg-success" style="font-size: 0.65rem;">REST DAY</span><% end %>
+                      </div>
+                    </td>
+                    <td class="text-end pe-3">
+                      <span class="fw-bold text-dark">x<%= number_with_precision(slice.multiplier_percent / 100.0, precision: 2) %></span>
+                      
+                      <% if slice.night_diff %>
+                        <div class="text-secondary fw-bold" style="font-size: 0.75rem;">
+                          <i class="bi bi-plus-circle-fill"></i> 10% Night
+                        </div>
+                      <% end %>
+                      <small class="text-muted d-block" style="font-size: 0.7rem;"><%= slice.multiplier_code %></small>
+                    </td>
+                  </tr>
+                <% end %>
+              <% else %>
+                <tr>
+                  <td colspan="5" class="text-center py-4 text-muted">No time segments calculated for this record.</td>
                 </tr>
               <% end %>
             </tbody>

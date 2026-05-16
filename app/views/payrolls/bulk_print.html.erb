@@ -1,0 +1,14 @@
+<%# This is the container that Grover will turn into an A4 page %>
+<% @payrolls.each_slice(10) do |batch| %>
+  <div class="page-grid">
+    <% batch.each do |payroll| %>
+      <%# This calls the mini_slip partial for each employee %>
+      <%= render 'mini_slip', payroll: payroll %>
+    <% end %>
+    
+    <%# Fill empty spots if the last page has fewer than 10 employees %>
+    <% (10 - batch.count).times do %>
+      <div style="border: 1px dashed #eee; visibility: hidden;"></div>
+    <% end %>
+  </div>
+<% end %>

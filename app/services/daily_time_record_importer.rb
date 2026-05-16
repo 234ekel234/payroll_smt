@@ -38,6 +38,8 @@ class DailyTimeRecordImporter
     )
 
     response = service.get_spreadsheet_values(@google_sheet_id, @sheet_range)
+    return unless response.values
+
     response.values.each_with_index do |row, index|
       import_row(row, index + 2) # +2 because of header
     end
@@ -68,16 +70,17 @@ class DailyTimeRecordImporter
       return
     end
 
+    # CRITICAL: MM/DD/YYYY Parsing logic
     date = parse_date(date_val)
     unless date
-      log_warn("Row #{row_number}: Invalid date '#{date_val}', skipping") if row_number
+      log_warn("Row #{row_number}: Invalid date format '#{date_val}'. Expected MM/DD/YYYY.") if row_number
       return
     end
 
     clock_in  = parse_time_for_date(clock_in_val, date)
     clock_out = parse_time_for_date(clock_out_val, date)
     unless clock_in && clock_out
-      log_warn("Row #{row_number}: Invalid clock in/out time, skipping") if row_number
+      log_warn("Row #{row_number}: Invalid clock in/out time for #{person_id}, skipping") if row_number
       return
     end
 
@@ -89,7 +92,7 @@ class DailyTimeRecordImporter
     record.clock_out = clock_out
 
     if record.save
-      log_info("Row #{row_number || ''}: Imported #{person_id} on #{date}")
+      log_info("Row #{row_number || ''}: Imported #{person_id} on #{date.strftime('%m/%d/%Y')}")
     else
       log_warn("Row #{row_number || ''}: Failed to save record: #{record.errors.full_messages.join(', ')}")
     end
@@ -98,25 +101,34 @@ class DailyTimeRecordImporter
   # ------------------------
   # Helpers
   # ------------------------
+
+  def parse_date(value)
+    return nil if value.blank?
+    # If the importer already converted it to a Date/DateTime object (common in Roo/XLSX)
+    return value.to_date if value.is_a?(Date) || value.is_a?(Time) || value.is_a?(DateTime)
+
+    begin
+      # Try explicit MM/DD/YYYY first
+      Date.strptime(value.to_s.strip, "%m/%d/%Y")
+    rescue ArgumentError
+      # Fallback to general parsing (handles YYYY-MM-DD or other formats)
+      Date.parse(value.to_s) rescue nil
+    end
+  end
+
   def parse_time_for_date(value, date)
     return nil if value.blank?
     
-    # FIX: Use Time.zone to respect Asia/Manila and prevent timezone shifting
     begin
+      # Use Time.zone to respect Asia/Manila
       t = value.is_a?(Time) || value.is_a?(DateTime) ? value : Time.zone.parse(value.to_s)
       return nil unless t
 
-      # Re-build local time using the App's timezone
+      # Re-build time on the specific date to avoid "Year 2000" or timezone drift
       Time.zone.local(date.year, date.month, date.day, t.hour, t.min, t.sec)
     rescue ArgumentError
       nil
     end
-  end
-
-  def parse_date(value)
-    return nil if value.blank?
-    return value if value.is_a?(Date) || value.is_a?(DateTime)
-    Date.parse(value.to_s) rescue nil
   end
 
   def extract_spreadsheet_id(url)

@@ -1,7 +1,24 @@
+<%# app/views/daily_time_records/_form.html.erb %>
+
 <%= form_with(model: @daily_time_record, local: true, class: "card shadow-sm border-0") do |f| %>
   <div class="card-body p-4">
+    
+    <%# --- Header / Context --- %>
+    <% if @daily_time_record.persisted? %>
+      <div class="mb-4 pb-3 border-bottom d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0 fw-bold">Edit Time Record</h5>
+          <small class="text-muted">Editing record for <strong><%= @daily_time_record.employee.name %></strong> on <%= @daily_time_record.date.strftime("%B %d, %Y") %></small>
+        </div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">ID: <%= @daily_time_record.id %></span>
+      </div>
+    <% else %>
+      <h5 class="mb-4 fw-bold">New Daily Time Record</h5>
+    <% end %>
+
+    <%# --- Error Messages --- %>
     <% if @daily_time_record.errors.any? %>
-      <div class="alert alert-danger shadow-sm border-start border-danger border-4">
+      <div class="alert alert-danger shadow-sm border-start border-danger border-4 mb-4">
         <h6 class="fw-bold">Please correct the following:</h6>
         <ul class="mb-0 small">
           <% @daily_time_record.errors.full_messages.each do |msg| %>
@@ -11,10 +28,11 @@
       </div>
     <% end %>
 
+    <%# --- Main Form Fields --- %>
     <div class="row g-3">
       <div class="col-md-6">
         <%= f.label :employee_id, "Employee Name", class: "form-label fw-bold text-muted small uppercase" %>
-        <%= f.collection_select :employee_id, Employee.all, :id, :name, { prompt: "Select Employee" }, class: "form-select border-primary-subtle" %>
+        <%= f.collection_select :employee_id, Employee.order(:name), :id, :name, { prompt: "Select Employee" }, class: "form-select border-primary-subtle" %>
       </div>
 
       <div class="col-md-6">
@@ -26,22 +44,31 @@
         <%= f.label :clock_in, "Clock In (Actual Time)", class: "form-label fw-bold text-muted small uppercase" %>
         <%= f.datetime_field :clock_in, class: "form-control" %>
       </div>
+      
       <div class="col-md-6">
         <%= f.label :clock_out, "Clock Out (Actual Time)", class: "form-label fw-bold text-muted small uppercase" %>
         <%= f.datetime_field :clock_out, class: "form-control" %>
       </div>
 
-      <div class="col-md-4">
-        <%= f.label :overtime_minutes, "Manual OT (Mins)", class: "form-label text-muted small" %>
-        <%= f.number_field :overtime_minutes, class: "form-control bg-light", placeholder: "0" %>
-      </div>
-      <div class="col-md-4">
-        <%= f.label :night_diff_minutes, "Manual Night (Mins)", class: "form-label text-muted small" %>
-        <%= f.number_field :night_diff_minutes, class: "form-control bg-light", placeholder: "0" %>
-      </div>
-      <div class="col-md-4">
-        <%= f.label :holiday_minutes, "Manual Holiday (Mins)", class: "form-label text-muted small" %>
-        <%= f.number_field :holiday_minutes, class: "form-control bg-light", placeholder: "0" %>
+      <%# --- Manual Adjustments Section --- %>
+      <div class="col-12 mt-4">
+        <div class="p-3 bg-light rounded border">
+          <label class="form-label fw-bold text-muted small uppercase d-block mb-3">Manual Adjustments (Minutes)</label>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <%= f.label :overtime_minutes, "Overtime", class: "form-label x-small text-muted" %>
+              <%= f.number_field :overtime_minutes, class: "form-control", placeholder: "0" %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :night_diff_minutes, "Night Diff", class: "form-label x-small text-muted" %>
+              <%= f.number_field :night_diff_minutes, class: "form-control", placeholder: "0" %>
+            </div>
+            <div class="col-md-4">
+              <%= f.label :holiday_minutes, "Holiday", class: "form-label x-small text-muted" %>
+              <%= f.number_field :holiday_minutes, class: "form-control", placeholder: "0" %>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="col-12">
@@ -50,11 +77,12 @@
       </div>
     </div>
 
+    <%# --- Time Slices Section (Visible only if record exists) --- %>
     <% if @daily_time_record.persisted? && @daily_time_record.time_slices.any? %>
-      <div class="mt-4 p-3 bg-light rounded border border-info-subtle">
+      <div class="mt-4 p-3 bg-white rounded border border-info-subtle shadow-sm">
         <h6 class="text-info fw-bold mb-3 small uppercase"><i class="bi bi-calculator"></i> Current Calculated Pay Slices</h6>
         <div class="table-responsive">
-          <table class="table table-sm table-borderless mb-0">
+          <table class="table table-sm align-middle mb-0">
             <thead>
               <tr class="small text-muted border-bottom">
                 <th>Multiplier Type</th>
@@ -66,7 +94,7 @@
               <% @daily_time_record.time_slices.each do |slice| %>
                 <tr>
                   <td>
-                    <span class="fw-bold text-secondary"><%= slice.multiplier_name %></span>
+                    <div class="fw-bold text-secondary"><%= slice.multiplier_name %></div>
                     <% if slice.night_diff %><span class="badge bg-dark rounded-pill" style="font-size: 0.6rem;">NIGHT</span><% end %>
                   </td>
                   <td class="text-center"><%= (slice.minutes.to_f / 60.0).round(2) %>h</td>
@@ -79,9 +107,23 @@
       </div>
     <% end %>
 
-    <div class="mt-4 pt-3 border-top d-flex justify-content-between">
-      <%= link_to "Cancel", daily_time_records_path, class: "btn btn-outline-secondary px-4" %>
-      <%= f.submit "Save Record", class: "btn btn-primary px-5 shadow-sm" %>
+    <%# --- Footer with Delete, Cancel, Save --- %>
+    <div class="mt-4 pt-4 border-top d-flex justify-content-between align-items-center">
+      <div>
+        <% if @daily_time_record.persisted? %>
+          <%= button_to @daily_time_record, 
+              method: :delete, 
+              form: { data: { turbo_confirm: "Are you sure? This will also delete all calculated pay slices for this day." } },
+              class: "btn btn-outline-danger px-4" do %>
+            <i class="bi bi-trash me-1"></i> Delete
+          <% end %>
+        <% end %>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= link_to "Cancel", daily_time_records_path, class: "btn btn-outline-secondary px-4" %>
+        <%= f.submit (@daily_time_record.new_record? ? "Create Record" : "Save Changes"), class: "btn btn-primary px-5 shadow-sm" %>
+      </div>
     </div>
   </div>
 <% end %>

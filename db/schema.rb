@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_18_062449) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_09_130101) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -67,11 +67,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_062449) do
     t.text "rest_days", default: ["Sat", "Sun"], array: true
     t.string "schedule"
     t.time "shift_end"
+    t.bigint "shift_id"
     t.time "shift_start"
     t.string "status_of_employment"
     t.datetime "updated_at", null: false
     t.text "work_days", default: ["Mon", "Tue", "Wed", "Thu", "Fri"], array: true
     t.index ["person_id"], name: "index_employees_on_person_id", unique: true
+    t.index ["shift_id"], name: "index_employees_on_shift_id"
   end
 
   create_table "gov_deduction_brackets", force: :cascade do |t|
@@ -118,23 +120,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_062449) do
   create_table "payrolls", force: :cascade do |t|
     t.decimal "allowance"
     t.decimal "basic_pay"
+    t.decimal "cash_advance"
     t.datetime "created_at", null: false
     t.decimal "daily_rate"
     t.integer "days_worked"
     t.bigint "employee_id", null: false
     t.date "end_date"
+    t.decimal "groceries_deduction"
     t.decimal "gross_pay", precision: 12, scale: 2
+    t.decimal "hdmf_amount"
+    t.decimal "hdmf_loan"
     t.decimal "holiday_pay"
+    t.decimal "late_ut_amount"
+    t.decimal "materials_deduction"
     t.decimal "net_pay", precision: 12, scale: 2
     t.decimal "night_diff_pay"
     t.decimal "overtime_pay"
+    t.decimal "phic_amount"
     t.datetime "processed_at"
     t.decimal "rest_day_pay"
+    t.decimal "rice_deduction"
+    t.decimal "sss_amount"
+    t.decimal "sss_loan"
     t.date "start_date"
     t.string "status"
     t.decimal "total_deductions", precision: 12, scale: 2
     t.datetime "updated_at", null: false
     t.index ["employee_id"], name: "index_payrolls_on_employee_id"
+  end
+
+  create_table "shifts", force: :cascade do |t|
+    t.time "break_end"
+    t.time "break_start"
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.time "shift_end"
+    t.time "shift_start"
+    t.datetime "updated_at", null: false
   end
 
   create_table "time_slices", force: :cascade do |t|
@@ -160,6 +182,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_062449) do
   add_foreign_key "daily_time_records", "employees"
   add_foreign_key "employee_deductions", "deductions"
   add_foreign_key "employee_deductions", "employees"
+  add_foreign_key "employees", "shifts"
   add_foreign_key "payroll_deductions", "deductions"
   add_foreign_key "payroll_deductions", "payrolls"
   add_foreign_key "payrolls", "employees"

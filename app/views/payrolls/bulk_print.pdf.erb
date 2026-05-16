@@ -1,0 +1,12 @@
+<% @payrolls.each_slice(10) do |batch| %>
+  <div class="page-grid">
+    <% batch.each do |payroll| %>
+      <%= render 'mini_slip', payroll: payroll %>
+    <% end %>
+    
+    <%# If a page has fewer than 10, this fills the empty space to keep layout consistent %>
+    <% (10 - batch.count).times do %>
+      <div style="border: 1px dashed #eee;"></div>
+    <% end %>
+  </div>
+<% end %>

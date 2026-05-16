@@ -1,9 +1,10 @@
-<%= form_with(model: gov_deduction_bracket) do |form| %>
-  <% if gov_deduction_bracket.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(gov_deduction_bracket.errors.count, "error") %> prohibited this gov_deduction_bracket from being saved:</h2>
+<%# app/views/gov_deduction_brackets/_form.html.erb %>
 
-      <ul>
+<%= form_with(model: gov_deduction_bracket, class: "row g-3") do |form| %>
+  <% if gov_deduction_bracket.errors.any? %>
+    <div class="alert alert-danger shadow-sm border-0">
+      <h6 class="fw-bold"><%= pluralize(gov_deduction_bracket.errors.count, "error") %> prohibited this bracket from being saved:</h6>
+      <ul class="mb-0 small">
         <% gov_deduction_bracket.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -11,27 +12,43 @@
     </div>
   <% end %>
 
-  <div>
-    <%= form.label :amount, style: "display: block" %>
-    <%= form.text_field :amount %>
+  <div class="col-md-12">
+    <%= form.label :deduction_type, "Deduction Category", class: "form-label fw-bold small text-muted text-uppercase" %>
+    <%# Using a select makes it impossible for users to enter the wrong ID %>
+    <%= form.select :deduction_type, 
+        [['SSS', 'sss'], ['PhilHealth', 'philhealth'], ['Pag-IBIG', 'pagibig']], 
+        { prompt: "Select Type" }, 
+        { class: "form-select border-0 shadow-sm" } %>
   </div>
 
-  <div>
-    <%= form.label :deduction_type, style: "display: block" %>
-    <%= form.number_field :deduction_type %>
+  <div class="col-md-6">
+    <%= form.label :range_min, "Salary Range From", class: "form-label fw-bold small text-muted text-uppercase" %>
+    <div class="input-group shadow-sm">
+      <span class="input-group-text border-0 bg-white">₱</span>
+      <%= form.number_field :range_min, step: :any, class: "form-control border-0", placeholder: "0.00" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :range_max, style: "display: block" %>
-    <%= form.text_field :range_max %>
+  <div class="col-md-6">
+    <%= form.label :range_max, "Salary Range To", class: "form-label fw-bold small text-muted text-uppercase" %>
+    <div class="input-group shadow-sm">
+      <span class="input-group-text border-0 bg-white">₱</span>
+      <%= form.number_field :range_max, step: :any, class: "form-control border-0", placeholder: "99999.99" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :range_min, style: "display: block" %>
-    <%= form.text_field :range_min %>
+  <div class="col-md-12">
+    <%= form.label :amount, "Fixed Amount (or Base for %)", class: "form-label fw-bold small text-muted text-uppercase" %>
+    <div class="input-group shadow-sm">
+      <span class="input-group-text border-0 bg-white">₱</span>
+      <%= form.number_field :amount, step: :any, class: "form-control border-0", placeholder: "Enter fixed peso amount" %>
+    </div>
+    <div class="form-text text-muted" style="font-size: 0.75rem;">
+      Note: For PhilHealth 2025/2026, logic will override this to 5% of basic salary.
+    </div>
   </div>
 
-  <div>
-    <%= form.submit %>
+  <div class="col-12 mt-4">
+    <%= form.submit "Save Deduction Bracket", class: "btn btn-primary w-100 shadow-sm py-2 fw-bold" %>
   </div>
 <% end %>

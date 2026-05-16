@@ -1,0 +1,42 @@
+<h1 class="mb-4">Shift Templates</h1>
+
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <%= link_to "Add New Shift", new_shift_path, class: "btn btn-primary" %>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-striped table-bordered table-hover table-sm">
+    <thead class="table-dark">
+      <tr>
+        <th>#</th>
+        <th>Shift Name</th>
+        <th>Start Time</th>
+        <th>End Time</th>
+        <th>Break Start</th>
+        <th>Break End</th>
+        <th class="text-center">Employees</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @shifts.each_with_index do |shift, idx| %>
+        <tr>
+          <td><%= idx + 1 %></td>
+          <td class="fw-bold"><%= shift.name %></td>
+          <td><%= shift.shift_start&.strftime("%I:%M %p") %></td>
+          <td><%= shift.shift_end&.strftime("%I:%M %p") %></td>
+          <td><%= shift.break_start&.strftime("%I:%M %p") || "N/A" %></td>
+          <td><%= shift.break_end&.strftime("%I:%M %p") || "N/A" %></td>
+          <td class="text-center">
+            <span class="badge bg-info text-dark"><%= shift.employees.count %></span>
+          </td>
+          <td class="d-flex gap-1">
+            <%= link_to "Show", shift_path(shift), class: "btn btn-sm btn-secondary" %>
+            <%= link_to "Edit", edit_shift_path(shift), class: "btn btn-sm btn-warning" %>
+            <%= button_to "Delete", shift_path(shift), method: :delete, form: { data: { turbo_confirm: "Are you sure?" } }, class: "btn btn-sm btn-danger" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

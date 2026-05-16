@@ -1,13 +1,14 @@
 class PayrollGenerator
-  def initialize(start_date:, end_date:, employees:, deduction_ids: [], sss: false, ph: false, pi: false)
-    @start_date    = start_date
-    @end_date      = end_date
-    @employees     = Array(employees)
-    @deduction_ids = deduction_ids
-    # Ensure these flags are captured correctly
-    @sss           = sss
-    @ph            = ph
-    @pi            = pi
+  def initialize(start_date:, end_date:, employees:, deduction_ids: [], custom_amounts: {}, sss: false, ph: false, pi: false)
+    @start_date     = start_date
+    @end_date       = end_date
+    @employees      = Array(employees)
+    @deduction_ids  = deduction_ids
+    # This captures the { "id" => "amount" } hash from your new form inputs
+    @custom_amounts = custom_amounts || {}
+    @sss            = sss
+    @ph             = ph
+    @pi             = pi
   end
 
   def generate!
@@ -88,14 +89,37 @@ class PayrollGenerator
       processed_at: Time.current
     )
 
-    # 5. Trigger Deductions with captured flags
+    # 5. Apply Selected Deductions
+    # First, handle standard deductions with possible custom amount overrides
+    apply_custom_deductions(payroll)
+
+    # 6. Trigger Statutory Deductions
     payroll.apply_all_deductions(
-      standard_ids: @deduction_ids,
+      standard_ids: [], # Pass empty since we handled them in apply_custom_deductions
       sss: @sss,
       ph:  @ph,
       pi:  @pi
     )
     
+    # Final recalculation ensures net_pay is correct after all injections
+    payroll.calculate_final_amounts!
     payroll
+  end
+
+  def apply_custom_deductions(payroll)
+    @deduction_ids.each do |d_id|
+      # Look for a value in the @custom_amounts hash. 
+      # Fallback to the default Deduction amount if not provided in the form.
+      override_amount = @custom_amounts[d_id.to_s]
+      base_deduction = Deduction.find(d_id)
+      
+      final_amount = override_amount.present? ? override_amount.to_f : base_deduction.amount
+
+      payroll.payroll_deductions.create!(
+        deduction_id: d_id,
+        amount: final_amount,
+        note: "Batch Applied"
+      )
+    end
   end
 end

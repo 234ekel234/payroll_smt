@@ -1,0 +1,48 @@
+<div class="card shadow-sm">
+  <div class="card-body">
+    <%= form_with(model: shift) do |form| %>
+      <% if shift.errors.any? %>
+        <div class="alert alert-danger">
+          <h6><%= pluralize(shift.errors.count, "error") %> prohibited this shift from being saved:</h6>
+          <ul>
+            <% shift.errors.each do |error| %>
+              <li><%= error.full_message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="mb-3">
+        <%= form.label :name, class: "form-label fw-bold" %>
+        <%= form.text_field :name, class: "form-control", placeholder: "e.g. FMI Morning Shift" %>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <%= form.label :shift_start, class: "form-label" %>
+          <%= form.time_field :shift_start, class: "form-control" %>
+        </div>
+        <div class="col-md-6 mb-3">
+          <%= form.label :shift_end, class: "form-label" %>
+          <%= form.time_field :shift_end, class: "form-control" %>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <%= form.label :break_start, class: "form-label" %>
+          <%= form.time_field :break_start, class: "form-control" %>
+        </div>
+        <div class="col-md-6 mb-3">
+          <%= form.label :break_end, class: "form-label" %>
+          <%= form.time_field :break_end, class: "form-control" %>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <%= form.submit class: "btn btn-success" %>
+        <%= link_to "Back to Shifts", shifts_path, class: "btn btn-outline-secondary ms-2" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,6 +1,5 @@
 <%= form_with(model: employee) do |f| %>
 
-  <!-- BASIC INFORMATION -->
   <h6 class="mb-3">Basic Information</h6>
 
   <div class="row mb-3">
@@ -30,7 +29,6 @@
     </div>
   </div>
 
-  <!-- PAY INFORMATION -->
   <h6 class="mt-4 mb-3">Pay Information</h6>
 
   <div class="row mb-3">
@@ -40,44 +38,59 @@
     </div>
 
     <div class="col-md-6">
-      <%= f.label :allowance_per_day, "Allowance (per day)", class: "form-label" %>
+      <%= f.label :allowance_per_day, "Allowance (per day)", class: "form-control" %>
       <%= f.number_field :allowance_per_day, step: 0.01, class: "form-control" %>
     </div>
   </div>
 
-  <!-- SCHEDULE -->
-  <h6 class="mt-4 mb-3">Schedule</h6>
+  <div class="card bg-light border-0 mt-4 mb-3">
+    <div class="card-body">
+      <h6 class="mb-3 text-primary">Shift Assignment</h6>
+      
+      <div class="mb-3">
+        <%= f.label :shift_id, "Assign to Group Shift Template", class: "form-label fw-bold" %>
+        <%= f.collection_select :shift_id, Shift.order(:name), :id, :name, 
+              { include_blank: "Individual / No Template" }, 
+              { class: "form-select border-primary" } %>
+        <div class="form-text">
+          If a template is selected, the "Individual Times" below will be ignored during payroll.
+        </div>
+      </div>
 
-  <div class="row mb-3">
-    <div class="col-md-4">
-      <%= f.label :shift_start, class: "form-label" %>
-      <%= f.time_field :shift_start, class: "form-control" %>
-    </div>
+      <hr class="my-4">
 
-    <div class="col-md-4">
-      <%= f.label :shift_end, class: "form-label" %>
-      <%= f.time_field :shift_end, class: "form-control" %>
-    </div>
+      <h6 class="mb-3 text-muted">Individual Times (Override)</h6>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <%= f.label :shift_start, class: "form-label" %>
+          <%= f.time_field :shift_start, class: "form-control" %>
+        </div>
 
-    <div class="col-md-4">
-      <%= f.label :schedule, "Schedule Name", class: "form-label" %>
-      <%= f.text_field :schedule, class: "form-control", placeholder: "e.g. Day Shift" %>
+        <div class="col-md-4">
+          <%= f.label :shift_end, class: "form-label" %>
+          <%= f.time_field :shift_end, class: "form-control" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :schedule, "Schedule Name", class: "form-label" %>
+          <%= f.text_field :schedule, class: "form-control", placeholder: "e.g. Day Shift" %>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <%= f.label :break_start, class: "form-label" %>
+          <%= f.time_field :break_start, class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :break_end, class: "form-label" %>
+          <%= f.time_field :break_end, class: "form-control" %>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="row mb-3">
-    <div class="col-md-6">
-      <%= f.label :break_start, class: "form-label" %>
-      <%= f.time_field :break_start, class: "form-control" %>
-    </div>
-
-    <div class="col-md-6">
-      <%= f.label :break_end, class: "form-label" %>
-      <%= f.time_field :break_end, class: "form-control" %>
-    </div>
-  </div>
-
-  <!-- WORK DAYS (CHECKBOXES) -->
   <h6 class="mt-4 mb-2">Work Days</h6>
 
   <div class="mb-3">
@@ -105,16 +118,14 @@
     </div>
   </div>
 
-  <!-- BANK -->
   <div class="form-check mb-4">
     <%= f.check_box :landbank_atm, class: "form-check-input" %>
     <%= f.label :landbank_atm, "Has Landbank ATM", class: "form-check-label" %>
   </div>
 
-  <!-- ACTION BUTTONS -->
-  <div class="d-flex justify-content-end gap-2">
+  <div class="d-flex justify-content-end gap-2 mb-5">
     <%= link_to "Cancel", employees_path, class: "btn btn-secondary" %>
-    <%= f.submit class: "btn btn-primary" %>
+    <%= f.submit "Save Employee", class: "btn btn-primary px-4" %>
   </div>
 
 <% end %>
