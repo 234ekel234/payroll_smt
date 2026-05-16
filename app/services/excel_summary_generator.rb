@@ -281,7 +281,7 @@ class ExcelSummaryGenerator
         ot_snwh_rd_pay:    pays[:ot_snwh_rd],
 
         # Regular Holiday
-        rh_not_worked_hr:  payroll.daily_rate.to_f > 0 ? ((payroll.absent_holiday_pay.to_f / payroll.daily_rate.to_f) * 8).round : 0,
+        rh_not_worked_hr:  payroll.daily_rate.to_f > 0 ? ((payroll.absent_holiday_pay.to_f / payroll.daily_rate.to_f) * shift_hours(payroll.employee)).round : 0,
         rh_not_worked_pay: payroll.absent_holiday_pay.to_f,
         rh_hr:             times[:rh_hr],
         rh_pay:            pays[:rh],
@@ -600,6 +600,26 @@ class ExcelSummaryGenerator
     cell = sheet.add_cell(row_0, col_0, display)
     cell.style_index = style_idx
     cell
+  end
+
+  # Returns the employee's scheduled working hours per day (shift minus break).
+  # Falls back to 8 if shift times are not configured.
+  def shift_hours(employee)
+    s = employee.shift_start_time
+    e = employee.shift_end_time
+    return 8.0 unless s && e
+
+    e += 24 * 3600 if e <= s  # overnight shift
+    total = e - s
+
+    bs = employee.break_start_time
+    be = employee.break_end_time
+    if bs && be
+      be += 24 * 3600 if be <= bs
+      total -= (be - bs)
+    end
+
+    (total / 3600.0).round(2)
   end
 
   # Converts 1-based column number to Excel letter(s): 1→A, 26→Z, 27→AA, etc.
