@@ -34,6 +34,7 @@ class PayrollGenerator
     hourly_rate = employee.basic_rate.to_f / 8.0
     period_dtrs = employee.daily_time_records.where(date: @start_date..@end_date)
     dtr_ids     = period_dtrs.pluck(:id)
+    dtr_dates   = period_dtrs.pluck(:date).to_set
     days_present = dtr_ids.count
     total_allowance = (employee.allowance_per_day.to_f * days_present)
 
@@ -47,7 +48,7 @@ class PayrollGenerator
 
       multiplier = (slice.multiplier_percent.to_f > 0 ? slice.multiplier_percent.to_f : 100.0) / 100.0
       slice_money = (duration_mins / 60.0) * hourly_rate * multiplier
-      
+
       # Determine category
       is_holiday = slice.holiday || slice.multiplier_code&.start_with?("RH", "SNWH")
       is_rest    = slice.rest_day || slice.multiplier_code&.split("-")&.include?("RD")
@@ -69,7 +70,10 @@ class PayrollGenerator
       slice.update_column(:pay, slice_money.round(2))
     end
 
-    # 3. Final Gross Calculation
+    # 3. Regular holiday pay for absent-but-eligible employees
+    totals[:holiday_pay] += absent_holiday_pay(employee, dtr_dates)
+
+    # 4. Final Gross Calculation
     gross_pay = (totals.values.sum + total_allowance).round(2)
 
     # 4. Create Payroll Record
@@ -106,6 +110,42 @@ class PayrollGenerator
     # Final recalculation ensures net_pay is correct after all injections
     payroll.calculate_final_amounts!
     payroll
+  end
+
+  # Returns the total holiday pay owed to an employee who was absent on regular holidays
+  # but present on the last scheduled work day before each holiday (day-before rule).
+  def absent_holiday_pay(employee, dtr_dates)
+    holidays = Holiday.where(date: @start_date..@end_date, holiday_type: "regular")
+    total = 0.0
+
+    holidays.each do |holiday|
+      # Skip if holiday falls on the employee's rest day
+      next unless employee.work_days.include?(holiday.date.strftime("%A"))
+
+      # Skip if employee already has a DTR on the holiday (paid via time slices)
+      next if dtr_dates.include?(holiday.date)
+
+      # Find the last scheduled work day before the holiday
+      prev_work_day = last_work_day_before(holiday.date, employee.work_days)
+      next unless prev_work_day
+
+      # Employee must have a DTR on that day to qualify
+      next unless dtr_dates.include?(prev_work_day)
+
+      total += employee.basic_rate.to_f
+    end
+
+    total
+  end
+
+  # Walks backward from a date to find the most recent day the employee is scheduled to work.
+  def last_work_day_before(date, work_days)
+    check = date - 1.day
+    14.times do
+      return check if work_days.include?(check.strftime("%A"))
+      check -= 1.day
+    end
+    nil
   end
 
   def apply_custom_deductions(payroll)

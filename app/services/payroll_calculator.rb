@@ -67,6 +67,8 @@ class PayrollCalculator
 
   def self.calculate_pagibig_contribution(salary)
     bracket = GovDeductionBracket.pagibig.where("range_min <= ? AND range_max >= ?", salary, salary).first
-    bracket ? bracket.amount.to_f : 200.0
+    return 200.0 if bracket.nil?
+    # amount: 0 signals percentage-based: 1% for salaries <= 1,500
+    bracket.amount.to_f == 0.0 ? (salary * 0.01).round(2) : bracket.amount.to_f
   end
 end

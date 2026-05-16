@@ -20,5 +20,7 @@ GovDeductionBracket.create!(deduction_type: :philhealth, range_min: 10000.01, ra
 GovDeductionBracket.create!(deduction_type: :philhealth, range_min: 100000, range_max: 9999999, amount: 2500.0)
 
 # Pag-IBIG Logic
-GovDeductionBracket.create!(deduction_type: :pagibig, range_min: 0, range_max: 1500, amount: 15.0)
+# Lower bracket: amount 0 signals 1% of salary (calculated dynamically)
+# Upper bracket: 2% of salary, capped at ₱200
+GovDeductionBracket.create!(deduction_type: :pagibig, range_min: 0,       range_max: 1500,   amount: 0.0)
 GovDeductionBracket.create!(deduction_type: :pagibig, range_min: 1500.01, range_max: 999999, amount: 200.0)
